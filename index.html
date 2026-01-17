@@ -3,139 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ace - Native English Assistant</title>
+    <title>Ace - Pronunciation Coach</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .mic-active { animation: pulse 1.5s infinite; background-color: #ef4444 !important; }
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .chat-bubble { border-radius: 20px; position: relative; }
+        .phonetic-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200 min-h-screen flex flex-col font-sans">
 
-    <header class="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]">
+    <header class="p-4 border-b border-slate-800 bg-[#1e293b] flex justify-between items-center shadow-xl">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <i class="fas fa-robot text-white"></i>
+            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                <i class="fas fa-microchip text-white"></i>
             </div>
-            <div>
-                <h1 class="font-bold text-lg">Ace</h1>
-                <p class="text-xs text-green-400 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Native Assistant</p>
-            </div>
+            <h1 class="font-bold text-lg tracking-tight">Ace <span class="text-blue-400">Coach</span></h1>
         </div>
-        <select id="topic-selector" onchange="changeTopic()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg p-2 outline-none focus:ring-2 ring-blue-500">
-            <option value="general">Daily Life (General)</option>
-            <option value="technical">Engineering & Maintenance</option>
-            <option value="sports">Sports & Betting Analysis</option>
-            <option value="business">Job Interviews / Business</option>
-        </select>
+        <div id="streak" class="text-orange-400 font-bold text-sm">🔥 <span id="points">0</span> pts</div>
     </header>
 
-    <main id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
-        <div class="flex flex-col items-start max-w-[80%]">
-            <div class="bg-slate-800 p-4 chat-bubble text-slate-200 shadow-md">
-                Hello! I'm Ace, your native American assistant. Ready to practice speaking? Select a topic above and click the mic to start.
-            </div>
-            <span class="text-[10px] mt-1 ml-2 text-slate-500">ACE • NOW</span>
+    <main class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-window">
+        <div class="bg-slate-800 p-4 rounded-2xl max-w-[90%] shadow-md">
+            <p class="text-blue-300 text-xs font-bold mb-1 uppercase">Ace Assistant</p>
+            <p>¡Hola! Soy tu coach nativo. Dime cualquier frase en inglés. Si pronuncias mal una palabra técnica o común, te enseñaré cómo decirla usando fonética en español.</p>
         </div>
     </main>
 
-    <footer class="p-8 border-t border-slate-800 bg-[#1e293b] flex flex-col items-center">
-        <div id="status-text" class="mb-4 text-sm text-blue-400 font-medium h-6">Click the mic and say something...</div>
-        
-        <div class="flex items-center gap-8">
-            <button onclick="startListening()" id="mic-btn" class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl shadow-xl hover:bg-blue-500 transition-all active:scale-95">
-                <i class="fas fa-microphone"></i>
-            </button>
-        </div>
-        
-        <p class="mt-6 text-xs text-slate-500 text-center max-w-xs">
-            "Your English improves by 1% every time you speak out loud."
-        </p>
+    <div id="correction-panel" class="hidden p-4 bg-slate-900 border-t border-blue-900/50">
+        <h3 class="text-blue-400 text-xs font-bold uppercase mb-2">Guía de Pronunciación:</h3>
+        <div id="phonetic-list" class="space-y-2">
+            </div>
+    </div>
+
+    <footer class="p-6 border-t border-slate-800 bg-[#1e293b] flex flex-col items-center">
+        <p id="status" class="text-sm text-slate-400 mb-4 italic">Haz clic para hablar...</p>
+        <button onclick="startListening()" id="mic-btn" class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-105 transition-all">
+            <i class="fas fa-microphone"></i>
+        </button>
     </footer>
 
     <script>
-        // Configuración de Voz (Native American English)
-        const synth = window.speechSynthesis;
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        
+        // Diccionario Fonético Personalizado (Español)
+        const phoneticDb = {
+            "maintenance": "méin-te-nans",
+            "schedule": "shé-diul",
+            "honing": "jó-nin",
+            "calibration": "ka-li-bréi-shon",
+            "troubleshooting": "tró-bol-shú-tin",
+            "machine": "ma-shín",
+            "sensor": "sén-sor",
+            "technical": "ték-ni-kal",
+            "interview": "ín-ter-viu",
+            "salary": "sá-la-ri",
+            "poisson": "pua-són",
+            "distribution": "dis-tri-biú-shon",
+            "betting": "bé-tin",
+            "odds": "ods",
+            "engineer": "en-yi-níer",
+            "fault": "folt",
+            "breaker": "bréi-ker",
+            "leak": "lik"
+        };
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'en-US';
         recognition.interimResults = false;
 
-        const chatWindow = document.getElementById('chat-window');
-        const statusText = document.getElementById('status-text');
-        const micBtn = document.getElementById('mic-btn');
-
-        const scenarios = {
-            general: ["How's your day going so far?", "What are your plans for the weekend?", "Tell me about a place you'd love to visit."],
-            technical: ["Describe the process of a machine overhaul.", "What is the most common fault in a Gleason machine?", "Explain the importance of sensor calibration."],
-            sports: ["Which team do you think has the edge tonight?", "How do you use Poisson distribution for betting?", "What's your take on dropping odds?"],
-            business: ["Tell me about your experience as a technician.", "Why are you looking for a new job at IMSS?", "What are your salary expectations?"]
-        };
-
         function addMessage(text, isUser = false) {
+            const chat = document.getElementById('chat-window');
             const div = document.createElement('div');
-            div.className = `flex flex-col ${isUser ? 'items-end ml-auto' : 'items-start'} max-w-[80%]`;
+            div.className = `flex flex-col ${isUser ? 'items-end ml-auto' : 'items-start'} max-w-[90%] animation-slide-up`;
             div.innerHTML = `
-                <div class="${isUser ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200'} p-4 chat-bubble shadow-md">
+                <div class="${isUser ? 'bg-blue-600' : 'bg-slate-800'} p-3 rounded-2xl shadow-lg">
                     ${text}
                 </div>
-                <span class="text-[10px] mt-1 mx-2 text-slate-500 uppercase tracking-widest">${isUser ? 'You' : 'Ace'}</span>
             `;
-            chatWindow.appendChild(div);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            const voices = synth.getVoices();
-            // Intentar buscar una voz americana nativa
-            utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-            utterance.rate = 0.95;
-            utterance.pitch = 1;
-            synth.speak(utterance);
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
         }
 
         function startListening() {
             recognition.start();
-            micBtn.classList.add('mic-active');
-            statusText.innerText = "Listening... speak now!";
+            document.getElementById('mic-btn').classList.add('mic-active');
+            document.getElementById('status').innerText = "Escuchando...";
+            document.getElementById('correction-panel').classList.add('hidden');
         }
 
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            micBtn.classList.remove('mic-active');
-            addMessage(transcript, true);
-            statusText.innerText = "Processing...";
+            const text = event.results[0][0].transcript.toLowerCase();
+            const confidence = event.results[0][0].confidence;
+            document.getElementById('mic-btn').classList.remove('mic-active');
             
-            // Lógica simple de respuesta "Nativa"
-            setTimeout(() => {
-                const topic = document.getElementById('topic-selector').value;
-                const responses = scenarios[topic];
-                const randomResp = "That's interesting! " + responses[Math.floor(Math.random() * responses.length)];
-                
-                addMessage(randomResp);
-                speak(randomResp);
-                statusText.innerText = "Ace replied. Your turn!";
-            }, 1000);
+            addMessage(text, true);
+            analyzePronunciation(text, confidence);
         };
 
-        recognition.onerror = () => {
-            micBtn.classList.remove('mic-active');
-            statusText.innerText = "Error. Try again.";
-        };
+        function analyzePronunciation(text, confidence) {
+            const words = text.split(' ');
+            const panel = document.getElementById('correction-panel');
+            const list = document.getElementById('phonetic-list');
+            list.innerHTML = '';
+            let found = false;
 
-        function changeTopic() {
-            const topicName = document.getElementById('topic-selector').options[document.getElementById('topic-selector').selectedIndex].text;
-            const msg = `Perfect, let's talk about ${topicName}. What's on your mind?`;
-            addMessage(msg);
-            speak(msg);
+            words.forEach(word => {
+                if (phoneticDb[word]) {
+                    found = true;
+                    const div = document.createElement('div');
+                    div.className = "phonetic-box p-2 rounded bg-blue-500/10 flex justify-between items-center";
+                    div.innerHTML = `
+                        <span class="font-bold text-white">${word}</span>
+                        <span class="text-blue-400 font-mono text-lg">${phoneticDb[word]}</span>
+                    `;
+                    list.appendChild(div);
+                }
+            });
+
+            // Si la confianza es baja, sugerir práctica general
+            if (confidence < 0.85) {
+                found = true;
+                const tip = document.createElement('p');
+                tip.className = "text-xs text-slate-400 italic mt-2";
+                tip.innerText = "Nota: Te entendí, pero tu pronunciación fue un poco débil. ¡Intenta exagerar más los sonidos!";
+                list.appendChild(tip);
+            }
+
+            if (found) {
+                panel.classList.remove('hidden');
+                speak("Let's check your pronunciation.");
+            } else {
+                speak("Good job! That sounded clear.");
+            }
+            
+            document.getElementById('status').innerText = "Listo.";
         }
 
-        // Cargar voces
-        window.speechSynthesis.onvoiceschanged = () => { console.log("Voices loaded"); };
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
     </script>
 </body>
 </html>
