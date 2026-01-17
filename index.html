@@ -1,183 +1,141 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic English Tech - Personal Coach</title>
+    <title>Ace - Native English Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .flip-card { background-color: transparent; perspective: 1000px; }
-        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
-        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
-        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 1rem; padding: 1.5rem; }
-        .flip-card-back { transform: rotateY(180deg); }
-        .tab-active { border-bottom: 3px solid #60a5fa; color: #60a5fa; }
+        .mic-active { animation: pulse 1.5s infinite; background-color: #ef4444 !important; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .chat-bubble { border-radius: 20px; position: relative; }
     </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen">
+<body class="bg-[#0f172a] text-slate-200 min-h-screen flex flex-col font-sans">
 
-    <nav class="p-4 border-b border-slate-700 bg-slate-800 sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fas fa-microchip text-blue-400"></i> TechEnglish Pro
-            </h1>
-            <div class="flex gap-4 text-sm">
-                <span class="bg-blue-900/50 px-3 py-1 rounded-full border border-blue-500">
-                    Streak: <span id="streak-val">0</span> 🔥
-                </span>
+    <header class="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i class="fas fa-robot text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg">Ace</h1>
+                <p class="text-xs text-green-400 flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Native Assistant</p>
             </div>
         </div>
-    </nav>
+        <select id="topic-selector" onchange="changeTopic()" class="bg-slate-800 border border-slate-700 text-sm rounded-lg p-2 outline-none focus:ring-2 ring-blue-500">
+            <option value="general">Daily Life (General)</option>
+            <option value="technical">Engineering & Maintenance</option>
+            <option value="sports">Sports & Betting Analysis</option>
+            <option value="business">Job Interviews / Business</option>
+        </select>
+    </header>
 
-    <main class="max-w-2xl mx-auto p-6">
-        <div class="flex border-b border-slate-700 mb-8">
-            <button onclick="switchTab('study')" id="tab-study" class="flex-1 py-3 font-semibold tab-active">Estudiar</button>
-            <button onclick="switchTab('add')" id="tab-add" class="flex-1 py-3 font-semibold text-slate-400">Agregar Vocabulario</button>
-        </div>
-
-        <div id="section-study" class="space-y-6">
-            <div id="card-container" class="flip-card w-full h-64 mx-auto" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front bg-slate-800 border-2 border-slate-700 shadow-2xl">
-                        <span class="text-xs text-blue-400 uppercase tracking-widest mb-4">Inglés</span>
-                        <p id="front-text" class="text-4xl font-bold tracking-tight">Honing Machine</p>
-                        <button onclick="speak(event)" class="mt-4 p-2 bg-slate-700 rounded-full hover:bg-slate-600 transition">
-                            <i class="fas fa-volume-up"></i> Pronunciar
-                        </button>
-                    </div>
-                    <div class="flip-card-back bg-blue-800 border-2 border-blue-400 shadow-2xl text-white">
-                        <span class="text-xs text-blue-200 uppercase tracking-widest mb-4">Español</span>
-                        <p id="back-text" class="text-3xl font-medium italic">Máquina Honeadora</p>
-                    </div>
-                </div>
+    <main id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+        <div class="flex flex-col items-start max-w-[80%]">
+            <div class="bg-slate-800 p-4 chat-bubble text-slate-200 shadow-md">
+                Hello! I'm Ace, your native American assistant. Ready to practice speaking? Select a topic above and click the mic to start.
             </div>
-
-            <div class="grid grid-cols-3 gap-4">
-                <button onclick="prevCard()" class="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <button onclick="markAsLearned()" class="bg-green-600 p-4 rounded-xl font-bold hover:bg-green-500 transition shadow-lg shadow-green-900/20">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button onclick="nextCard()" class="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition">
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-
-        <div id="section-add" class="hidden space-y-4">
-            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                <h2 class="text-lg font-bold mb-4">Nueva Palabra Técnica</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Palabra o frase en Inglés</label>
-                        <input type="text" id="new-en" placeholder="Ej: Sensor calibration" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-lg focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Traducción al Español</label>
-                        <input type="text" id="new-es" placeholder="Ej: Calibración de sensor" class="w-full bg-slate-900 border border-slate-600 p-3 rounded-lg focus:outline-none focus:border-blue-500">
-                    </div>
-                    <button onclick="addNewWord()" class="w-full bg-blue-600 p-3 rounded-lg font-bold hover:bg-blue-500 transition">
-                        Guardar en mi Biblioteca
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-12">
-            <h3 class="text-slate-500 text-sm font-bold uppercase mb-4 tracking-tighter">Mi Biblioteca</h3>
-            <div id="word-list" class="space-y-2">
-                </div>
+            <span class="text-[10px] mt-1 ml-2 text-slate-500">ACE • NOW</span>
         </div>
     </main>
 
+    <footer class="p-8 border-t border-slate-800 bg-[#1e293b] flex flex-col items-center">
+        <div id="status-text" class="mb-4 text-sm text-blue-400 font-medium h-6">Click the mic and say something...</div>
+        
+        <div class="flex items-center gap-8">
+            <button onclick="startListening()" id="mic-btn" class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl shadow-xl hover:bg-blue-500 transition-all active:scale-95">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+        
+        <p class="mt-6 text-xs text-slate-500 text-center max-w-xs">
+            "Your English improves by 1% every time you speak out loud."
+        </p>
+    </footer>
+
     <script>
-        let words = JSON.parse(localStorage.getItem('myWords')) || [
-            {en: "Honing Machine", es: "Máquina Honeadora"},
-            {en: "Troubleshooting", es: "Detección y resolución de problemas"},
-            {en: "Maintenance Schedule", es: "Calendario de mantenimiento"},
-            {en: "Output", es: "Salida / Producción"},
-            {en: "Data Sheet", es: "Hoja de datos técnicos"}
-        ];
+        // Configuración de Voz (Native American English)
+        const synth = window.speechSynthesis;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
 
-        let currentIndex = 0;
-        let streak = parseInt(localStorage.getItem('streak')) || 0;
+        const chatWindow = document.getElementById('chat-window');
+        const statusText = document.getElementById('status-text');
+        const micBtn = document.getElementById('mic-btn');
 
-        function updateCard() {
-            if(words.length === 0) return;
-            const current = words[currentIndex];
-            document.getElementById('front-text').innerText = current.en;
-            document.getElementById('back-text').innerText = current.es;
-            document.getElementById('card-container').classList.remove('flipped');
-            document.getElementById('streak-val').innerText = streak;
-            renderList();
-        }
+        const scenarios = {
+            general: ["How's your day going so far?", "What are your plans for the weekend?", "Tell me about a place you'd love to visit."],
+            technical: ["Describe the process of a machine overhaul.", "What is the most common fault in a Gleason machine?", "Explain the importance of sensor calibration."],
+            sports: ["Which team do you think has the edge tonight?", "How do you use Poisson distribution for betting?", "What's your take on dropping odds?"],
+            business: ["Tell me about your experience as a technician.", "Why are you looking for a new job at IMSS?", "What are your salary expectations?"]
+        };
 
-        function nextCard() {
-            currentIndex = (currentIndex + 1) % words.length;
-            updateCard();
-        }
-
-        function prevCard() {
-            currentIndex = (currentIndex - 1 + words.length) % words.length;
-            updateCard();
-        }
-
-        function speak(event) {
-            event.stopPropagation();
-            const text = words[currentIndex].en;
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function addNewWord() {
-            const en = document.getElementById('new-en').value;
-            const es = document.getElementById('new-es').value;
-            if(en && es) {
-                words.unshift({en, es});
-                localStorage.setItem('myWords', JSON.stringify(words));
-                document.getElementById('new-en').value = '';
-                document.getElementById('new-es').value = '';
-                alert("¡Palabra guardada!");
-                switchTab('study');
-                updateCard();
-            }
-        }
-
-        function markAsLearned() {
-            streak++;
-            localStorage.setItem('streak', streak);
-            nextCard();
-        }
-
-        function renderList() {
-            const list = document.getElementById('word-list');
-            list.innerHTML = words.slice(0, 5).map(w => `
-                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 flex justify-between text-sm">
-                    <span class="font-bold text-blue-300">${w.en}</span>
-                    <span class="text-slate-400">${w.es}</span>
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `flex flex-col ${isUser ? 'items-end ml-auto' : 'items-start'} max-w-[80%]`;
+            div.innerHTML = `
+                <div class="${isUser ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200'} p-4 chat-bubble shadow-md">
+                    ${text}
                 </div>
-            `).join('');
+                <span class="text-[10px] mt-1 mx-2 text-slate-500 uppercase tracking-widest">${isUser ? 'You' : 'Ace'}</span>
+            `;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        function switchTab(tab) {
-            if(tab === 'study') {
-                document.getElementById('section-study').classList.remove('hidden');
-                document.getElementById('section-add').classList.add('hidden');
-                document.getElementById('tab-study').classList.add('tab-active');
-                document.getElementById('tab-add').classList.remove('tab-active');
-            } else {
-                document.getElementById('section-study').classList.add('hidden');
-                document.getElementById('section-add').classList.remove('hidden');
-                document.getElementById('tab-study').classList.remove('tab-active');
-                document.getElementById('tab-add').classList.add('tab-active');
-            }
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = synth.getVoices();
+            // Intentar buscar una voz americana nativa
+            utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+            utterance.rate = 0.95;
+            utterance.pitch = 1;
+            synth.speak(utterance);
         }
 
-        updateCard();
+        function startListening() {
+            recognition.start();
+            micBtn.classList.add('mic-active');
+            statusText.innerText = "Listening... speak now!";
+        }
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            micBtn.classList.remove('mic-active');
+            addMessage(transcript, true);
+            statusText.innerText = "Processing...";
+            
+            // Lógica simple de respuesta "Nativa"
+            setTimeout(() => {
+                const topic = document.getElementById('topic-selector').value;
+                const responses = scenarios[topic];
+                const randomResp = "That's interesting! " + responses[Math.floor(Math.random() * responses.length)];
+                
+                addMessage(randomResp);
+                speak(randomResp);
+                statusText.innerText = "Ace replied. Your turn!";
+            }, 1000);
+        };
+
+        recognition.onerror = () => {
+            micBtn.classList.remove('mic-active');
+            statusText.innerText = "Error. Try again.";
+        };
+
+        function changeTopic() {
+            const topicName = document.getElementById('topic-selector').options[document.getElementById('topic-selector').selectedIndex].text;
+            const msg = `Perfect, let's talk about ${topicName}. What's on your mind?`;
+            addMessage(msg);
+            speak(msg);
+        }
+
+        // Cargar voces
+        window.speechSynthesis.onvoiceschanged = () => { console.log("Voices loaded"); };
     </script>
 </body>
 </html>
