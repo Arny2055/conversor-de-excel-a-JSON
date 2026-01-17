@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Learning Hub - Personal Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans">
+
+    <nav class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+        <h1 class="text-2xl font-bold text-blue-400 underline decoration-2">EnglishDev Tool</h1>
+        <div id="stats" class="text-sm text-slate-400">Palabras aprendidas: <span id="learned-count" class="text-green-400">0</span></div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-6">
+        <div class="mb-8 flex flex-wrap gap-4 justify-center">
+            <button onclick="loadCategory('basic')" class="px-4 py-2 bg-slate-700 hover:bg-blue-600 rounded-lg transition">Básico</button>
+            <button onclick="loadCategory('technical')" class="px-4 py-2 bg-slate-700 hover:bg-blue-600 rounded-lg transition border-2 border-blue-500">Inglés Técnico</button>
+            <button onclick="loadCategory('business')" class="px-4 py-2 bg-slate-700 hover:bg-blue-600 rounded-lg transition">Laboral</button>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div id="card-container" class="flip-card w-80 h-48 md:w-96 md:h-64 mb-6" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front bg-slate-800 border-2 border-slate-600 shadow-xl">
+                        <p id="front-text" class="text-3xl font-bold text-center">Cargando...</p>
+                    </div>
+                    <div class="flip-card-back bg-blue-700 border-2 border-blue-400 shadow-xl">
+                        <p id="back-text" class="text-2xl font-medium text-center italic"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="prevCard()" class="bg-slate-700 p-3 rounded-full hover:bg-slate-600">
+                    ← Prev
+                </button>
+                <button onclick="markAsLearned()" class="bg-green-600 px-6 py-2 rounded-lg font-bold hover:bg-green-500 transition">
+                    ¡Aprendida!
+                </button>
+                <button onclick="nextCard()" class="bg-slate-700 p-3 rounded-full hover:bg-slate-600">
+                    Next →
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-12 p-6 bg-slate-800 rounded-xl border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2 text-blue-300">Tip de hoy:</h3>
+            <p class="text-slate-400 italic">"En mantenimiento, 'Troubleshooting' no solo significa arreglar, sino el proceso lógico de encontrar la falla."</p>
+        </div>
+    </main>
+
+    <script>
+        const data = {
+            basic: [
+                {en: "Welcome", es: "Bienvenido"},
+                {en: "How are you?", es: "¿Cómo estás?"}
+            ],
+            technical: [
+                {en: "Honing Machine", es: "Maquinaria de honeado (rectificado)"},
+                {en: "Preventive Maintenance", es: "Mantenimiento preventivo"},
+                {en: "Sensor Calibration", es: "Calibración de sensores"},
+                {en: "Fault Diagnosis", es: "Diagnóstico de fallas"},
+                {en: "Overhaul", es: "Revisión general / Mantenimiento mayor"},
+                {en: "Tooling", es: "Herramental"},
+                {en: "Lead time", es: "Tiempo de entrega / espera"},
+                {en: "Spare parts", es: "Refacciones"},
+                {en: "Work order", es: "Orden de trabajo"}
+            ],
+            business: [
+                {en: "Deadline", es: "Fecha límite"},
+                {en: "Meeting", es: "Reunión"}
+            ]
+        };
+
+        let currentCategory = 'technical';
+        let currentIndex = 0;
+        let learnedCount = localStorage.getItem('learnedCount') || 0;
+
+        function updateCard() {
+            const card = data[currentCategory][currentIndex];
+            document.getElementById('front-text').innerText = card.en;
+            document.getElementById('back-text').innerText = card.es;
+            document.getElementById('card-container').classList.remove('flipped');
+            document.getElementById('learned-count').innerText = learnedCount;
+        }
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % data[currentCategory].length;
+            updateCard();
+        }
+
+        function prevCard() {
+            currentIndex = (currentIndex - 1 + data[currentCategory].length) % data[currentCategory].length;
+            updateCard();
+        }
+
+        function loadCategory(cat) {
+            currentCategory = cat;
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function markAsLearned() {
+            learnedCount++;
+            localStorage.setItem('learnedCount', learnedCount);
+            nextCard();
+        }
+
+        // Inicializar
+        updateCard();
+    </script>
+</body>
+</html>
