@@ -1,150 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ace - Pronunciation Coach</title>
+    <title>Progol Predictor Pro - 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .mic-active { animation: pulse 1.5s infinite; background-color: #ef4444 !important; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .phonetic-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; }
+        .active-l { background-color: #ef4444 !important; color: white; } /* Rojo */
+        .active-e { background-color: #f59e0b !important; color: white; } /* Naranja */
+        .active-v { background-color: #3b82f6 !important; color: white; } /* Azul */
+        tr:nth-child(even) { background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-[#0f172a] text-slate-200 min-h-screen flex flex-col font-sans">
+<body class="bg-gray-100 min-h-screen font-sans">
 
-    <header class="p-4 border-b border-slate-800 bg-[#1e293b] flex justify-between items-center shadow-xl">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
-                <i class="fas fa-microchip text-white"></i>
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <div class="bg-white rounded-t-xl shadow-md p-6 border-b-4 border-indigo-600">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Progol Predictor <span class="text-indigo-600">v2026</span></h1>
+                    <p class="text-gray-500">Analizador de quinielas y calculador de costos</p>
+                </div>
+                <div class="mt-4 md:mt-0 text-right">
+                    <div class="text-sm text-gray-400 uppercase font-bold tracking-widest">Costo Total Estimado</div>
+                    <div class="text-3xl font-black text-green-600" id="totalCost">$0.00</div>
+                </div>
             </div>
-            <h1 class="font-bold text-lg tracking-tight">Ace <span class="text-blue-400">Coach</span></h1>
         </div>
-        <div id="streak" class="text-orange-400 font-bold text-sm">🔥 <span id="points">0</span> pts</div>
-    </header>
 
-    <main class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-window">
-        <div class="bg-slate-800 p-4 rounded-2xl max-w-[90%] shadow-md">
-            <p class="text-blue-300 text-xs font-bold mb-1 uppercase">Ace Assistant</p>
-            <p>¡Hola! Soy tu coach nativo. Dime cualquier frase en inglés. Si pronuncias mal una palabra técnica o común, te enseñaré cómo decirla usando fonética en español.</p>
+        <div class="bg-white shadow-xl overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="py-4 px-4 text-center w-16">#</th>
+                        <th class="py-4 px-4">Encuentro (Local vs Visitante)</th>
+                        <th class="py-4 px-4 text-center w-48">Pronóstico</th>
+                    </tr>
+                </thead>
+                <tbody id="matchTable">
+                    </tbody>
+            </table>
         </div>
-    </main>
 
-    <div id="correction-panel" class="hidden p-4 bg-slate-900 border-t border-blue-900/50">
-        <h3 class="text-blue-400 text-xs font-bold uppercase mb-2">Guía de Pronunciación:</h3>
-        <div id="phonetic-list" class="space-y-2">
+        <div class="bg-gray-50 p-6 rounded-b-xl shadow-md flex flex-wrap gap-4 justify-between items-center">
+            <div class="flex gap-2">
+                <button onclick="generateRandom()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-dice mr-2"></i>Al azar
+                </button>
+                <button onclick="clearPool()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition font-semibold">
+                    <i class="fas fa-trash mr-2"></i>Limpiar
+                </button>
             </div>
+            
+            <div class="flex gap-2">
+                <button onclick="saveToLocal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition font-semibold shadow-lg">
+                    <i class="fas fa-save mr-2"></i>Guardar Pronóstico
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h4 class="font-bold text-blue-800 mb-1"><i class="fas fa-info-circle mr-1"></i> Costos</h4>
+                <p class="text-blue-700 text-xs">Sencilla: $15. Se calculan dobles y triples según reglas oficiales.</p>
+            </div>
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                <h4 class="font-bold text-yellow-800 mb-1"><i class="fas fa-lightbulb mr-1"></i> Tip</h4>
+                <p class="text-yellow-700 text-xs">Haz clic en varias opciones del mismo partido para marcar un Doble o Triple.</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <h4 class="font-bold text-purple-800 mb-1"><i class="fas fa-github mr-1"></i> GitHub Pages</h4>
+                <p class="text-purple-700 text-xs">Sube este index.html a un repo para tener tu herramienta online.</p>
+            </div>
+        </div>
     </div>
 
-    <footer class="p-6 border-t border-slate-800 bg-[#1e293b] flex flex-col items-center">
-        <p id="status" class="text-sm text-slate-400 mb-4 italic">Haz clic para hablar...</p>
-        <button onclick="startListening()" id="mic-btn" class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-105 transition-all">
-            <i class="fas fa-microphone"></i>
-        </button>
-    </footer>
-
     <script>
-        // Diccionario Fonético Personalizado (Español)
-        const phoneticDb = {
-            "maintenance": "méin-te-nans",
-            "schedule": "shé-diul",
-            "honing": "jó-nin",
-            "calibration": "ka-li-bréi-shon",
-            "troubleshooting": "tró-bol-shú-tin",
-            "machine": "ma-shín",
-            "sensor": "sén-sor",
-            "technical": "ték-ni-kal",
-            "interview": "ín-ter-viu",
-            "salary": "sá-la-ri",
-            "poisson": "pua-són",
-            "distribution": "dis-tri-biú-shon",
-            "betting": "bé-tin",
-            "odds": "ods",
-            "engineer": "en-yi-níer",
-            "fault": "folt",
-            "breaker": "bréi-ker",
-            "leak": "lik"
-        };
+        const PRICE_SINGLE = 15;
+        const totalMatches = 14;
+        
+        // Estructura de datos para los partidos
+        let selections = Array.from({ length: totalMatches }, () => ({
+            L: false, E: false, V: false, localTeam: '', visitorTeam: ''
+        }));
 
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
+        // Inicializar tabla
+        function initTable() {
+            const tableBody = document.getElementById('matchTable');
+            tableBody.innerHTML = '';
 
-        function addMessage(text, isUser = false) {
-            const chat = document.getElementById('chat-window');
-            const div = document.createElement('div');
-            div.className = `flex flex-col ${isUser ? 'items-end ml-auto' : 'items-start'} max-w-[90%] animation-slide-up`;
-            div.innerHTML = `
-                <div class="${isUser ? 'bg-blue-600' : 'bg-slate-800'} p-3 rounded-2xl shadow-lg">
-                    ${text}
-                </div>
-            `;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+            for (let i = 0; i < totalMatches; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-4 px-4 text-center font-bold text-gray-400">${i + 1}</td>
+                    <td class="py-2 px-4">
+                        <div class="flex items-center gap-2">
+                            <input type="text" placeholder="Local" class="w-full p-1 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 outline-none bg-transparent transition" 
+                                   onchange="updateTeamName(${i}, 'local', this.value)" id="local-${i}">
+                            <span class="text-xs font-bold text-gray-300">VS</span>
+                            <input type="text" placeholder="Visitante" class="w-full p-1 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 outline-none bg-transparent transition text-right" 
+                                   onchange="updateTeamName(${i}, 'visitor', this.value)" id="visitor-${i}">
+                        </div>
+                    </td>
+                    <td class="py-2 px-4">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="toggleSelection(${i}, 'L')" id="btn-${i}-L" class="w-10 h-10 rounded border-2 border-gray-200 font-bold transition hover:bg-red-50 text-gray-400">L</button>
+                            <button onclick="toggleSelection(${i}, 'E')" id="btn-${i}-E" class="w-10 h-10 rounded border-2 border-gray-200 font-bold transition hover:bg-orange-50 text-gray-400">E</button>
+                            <button onclick="toggleSelection(${i}, 'V')" id="btn-${i}-V" class="w-10 h-10 rounded border-2 border-gray-200 font-bold transition hover:bg-blue-50 text-gray-400">V</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            }
+            loadFromLocal();
         }
 
-        function startListening() {
-            recognition.start();
-            document.getElementById('mic-btn').classList.add('mic-active');
-            document.getElementById('status').innerText = "Escuchando...";
-            document.getElementById('correction-panel').classList.add('hidden');
+        function toggleSelection(index, type) {
+            selections[index][type] = !selections[index][type];
+            updateUI();
         }
 
-        recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript.toLowerCase();
-            const confidence = event.results[0][0].confidence;
-            document.getElementById('mic-btn').classList.remove('mic-active');
-            
-            addMessage(text, true);
-            analyzePronunciation(text, confidence);
-        };
+        function updateTeamName(index, side, value) {
+            if (side === 'local') selections[index].localTeam = value;
+            else selections[index].visitorTeam = value;
+        }
 
-        function analyzePronunciation(text, confidence) {
-            const words = text.split(' ');
-            const panel = document.getElementById('correction-panel');
-            const list = document.getElementById('phonetic-list');
-            list.innerHTML = '';
-            let found = false;
+        function updateUI() {
+            selections.forEach((sel, i) => {
+                document.getElementById(`btn-${i}-L`).className = `w-10 h-10 rounded border-2 font-bold transition ${sel.L ? 'active-l border-red-500' : 'border-gray-200 text-gray-400'}`;
+                document.getElementById(`btn-${i}-E`).className = `w-10 h-10 rounded border-2 font-bold transition ${sel.E ? 'active-e border-amber-500' : 'border-gray-200 text-gray-400'}`;
+                document.getElementById(`btn-${i}-V`).className = `w-10 h-10 rounded border-2 font-bold transition ${sel.V ? 'active-v border-blue-500' : 'border-gray-200 text-gray-400'}`;
+                
+                document.getElementById(`local-${i}`).value = sel.localTeam || '';
+                document.getElementById(`visitor-${i}`).value = sel.visitorTeam || '';
+            });
+            calculateCost();
+        }
 
-            words.forEach(word => {
-                if (phoneticDb[word]) {
-                    found = true;
-                    const div = document.createElement('div');
-                    div.className = "phonetic-box p-2 rounded bg-blue-500/10 flex justify-between items-center";
-                    div.innerHTML = `
-                        <span class="font-bold text-white">${word}</span>
-                        <span class="text-blue-400 font-mono text-lg">${phoneticDb[word]}</span>
-                    `;
-                    list.appendChild(div);
-                }
+        function calculateCost() {
+            let doubles = 0;
+            let triples = 0;
+            let valid = true;
+
+            selections.forEach(sel => {
+                const count = [sel.L, sel.E, sel.V].filter(Boolean).length;
+                if (count === 0) valid = false;
+                if (count === 2) doubles++;
+                if (count === 3) triples++;
             });
 
-            // Si la confianza es baja, sugerir práctica general
-            if (confidence < 0.85) {
-                found = true;
-                const tip = document.createElement('p');
-                tip.className = "text-xs text-slate-400 italic mt-2";
-                tip.innerText = "Nota: Te entendí, pero tu pronunciación fue un poco débil. ¡Intenta exagerar más los sonidos!";
-                list.appendChild(tip);
+            if (!valid) {
+                document.getElementById('totalCost').innerText = "$0.00";
+                return;
             }
 
-            if (found) {
-                panel.classList.remove('hidden');
-                speak("Let's check your pronunciation.");
-            } else {
-                speak("Good job! That sounded clear.");
-            }
-            
-            document.getElementById('status').innerText = "Listo.";
+            // Fórmula Progol: 2^dobles * 3^triples * Precio Sencillo
+            const cost = Math.pow(2, doubles) * Math.pow(3, triples) * PRICE_SINGLE;
+            document.getElementById('totalCost').innerText = `$${cost.toLocaleString()}`;
         }
 
-        function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
+        function generateRandom() {
+            selections.forEach(sel => {
+                const options = ['L', 'E', 'V'];
+                const randomChoice = options[Math.floor(Math.random() * options.length)];
+                sel.L = (randomChoice === 'L');
+                sel.E = (randomChoice === 'E');
+                sel.V = (randomChoice === 'V');
+            });
+            updateUI();
         }
+
+        function clearPool() {
+            if(confirm('¿Seguro que quieres borrar toda la quiniela?')) {
+                selections = Array.from({ length: totalMatches }, () => ({
+                    L: false, E: false, V: false, localTeam: '', visitorTeam: ''
+                }));
+                updateUI();
+            }
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('progol_data', JSON.stringify(selections));
+            alert('¡Pronóstico guardado en este navegador!');
+        }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem('progol_data');
+            if (saved) {
+                selections = JSON.parse(saved);
+                updateUI();
+            }
+        }
+
+        // Iniciar al cargar
+        initTable();
     </script>
 </body>
 </html>
