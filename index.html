@@ -3,61 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de P-Value - Análisis de Apuestas</title>
+    <title>Analizador Premium de Apuestas - P-Value & Drawdown</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; }
-        textarea { width: 100%; height: 150px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; font-family: monospace; }
-        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
-        button:hover { background-color: #219150; }
-        .results { margin-top: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .card { background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center; border-left: 5px solid #27ae60; }
-        .card h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
-        .card p { margin: 10px 0 0; font-size: 22px; font-weight: bold; color: #2c3e50; }
-        .interpretation { margin-top: 20px; padding: 15px; border-radius: 6px; line-height: 1.6; }
-        .sig-true { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .sig-false { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #2c3e50; color: white; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #1a1a1a; margin: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { color: #1e3a8a; text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 25px; }
+        textarea { width: 100%; height: 120px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 13px; resize: vertical; }
+        button { background-color: #2563eb; color: white; border: none; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; transition: 0.3s; }
+        button:hover { background-color: #1d4ed8; }
+        
+        .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 25px; }
+        .card { background: #ffffff; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; }
+        .card h3 { margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        .card p { margin: 10px 0 0; font-size: 24px; font-weight: 800; color: #1e293b; }
+        
+        .chart-container { margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 10px; height: 400px; }
+        
+        .interpretation { margin-top: 20px; padding: 20px; border-radius: 8px; font-size: 15px; line-height: 1.6; }
+        .sig-true { background-color: #dcfce7; color: #166534; border-left: 6px solid #22c55e; }
+        .sig-false { background-color: #fee2e2; color: #991b1b; border-left: 6px solid #ef4444; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; background: white; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        th { background-color: #f8fafc; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Análisis de P-Value y Rendimiento</h1>
-    <p>Pega aquí las filas de tu historial (incluyendo la cabecera o solo los datos):</p>
-    <textarea id="csvData" placeholder="Copia y pega desde Excel aquí..."></textarea>
-    <button onclick="processData()">Calcular Resultados</button>
+    <h1>Analizador de Estrategia Poisson</h1>
+    <p class="subtitle">Calcula la ventaja estadística y visualiza el riesgo de tu historial</p>
+    
+    <textarea id="csvData" placeholder="Pega aquí tus datos desde Excel (incluyendo cabecera)..."></textarea>
+    <button onclick="processData()">Analizar Historial</button>
 
     <div id="output" style="display:none;">
         <div class="results">
-            <div class="card">
-                <h3>Total Apuestas</h3>
-                <p id="totalBets">0</p>
-            </div>
-            <div class="card">
-                <h3>Win Rate</h3>
-                <p id="winRate">0%</p>
-            </div>
-            <div class="card">
-                <h3>Yield / ROI</h3>
-                <p id="yield">0%</p>
-            </div>
-            <div class="card">
-                <h3>P-Value</h3>
-                <p id="pValue">0</p>
-            </div>
+            <div class="card"><h3>Total Picks</h3><p id="totalBets">0</p></div>
+            <div class="card"><h3>Yield %</h3><p id="yield">0%</p></div>
+            <div class="card"><h3>P-Value</h3><p id="pValue">0</p></div>
+            <div class="card"><h3>Max Drawdown</h3><p id="drawdown" style="color: #dc2626;">0u</p></div>
+            <div class="card"><h3>Profit Total</h3><p id="totalProfit">0u</p></div>
         </div>
 
         <div id="interpretation" class="interpretation"></div>
         
-        <h3>Resumen de Datos Procesados</h3>
+        <div class="chart-container">
+            <canvas id="profitChart"></canvas>
+        </div>
+
+        <h3>Detalle de Sesión</h3>
         <div style="overflow-x:auto;">
             <table id="dataTable">
                 <thead>
-                    <tr id="tableHeader"></tr>
+                    <tr>
+                        <th>Nombre</th><th>Cuota</th><th>Liga</th><th>Partido</th><th>Resultado</th><th>Profit Acum.</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -66,95 +69,129 @@
 </div>
 
 <script>
+let myChart = null;
+
 function processData() {
     const rawData = document.getElementById('csvData').value.trim();
     if (!rawData) return;
 
     const rows = rawData.split('\n');
-    let wins = 0;
-    let totalBets = 0;
-    let totalProfit = 0;
-    let totalStaked = 0;
-    let sumProbabilities = 0;
+    let wins = 0, totalBets = 0, totalProfit = 0, totalStaked = 0, sumProbabilities = 0;
+    let profitHistory = [0];
+    let maxProfitSoFar = 0;
+    let maxDrawdown = 0;
 
     const tableBody = document.getElementById('tableBody');
     tableBody.innerHTML = '';
 
-    rows.forEach((row, index) => {
+    rows.forEach((row) => {
         const cols = row.split('\t');
-        
-        // Ignorar cabecera si existe (buscando si la columna 'Odd' es un número)
         const odd = parseFloat(cols[2]);
         const result = cols[36] ? cols[36].trim().toLowerCase() : "";
 
         if (!isNaN(odd) && result !== "") {
             totalBets++;
-            totalStaked += 1; // Asumimos flat stake de 1 unidad
-
-            // Probabilidad implícita (1/cuota)
+            totalStaked += 1; // Flat Stake de 1 unidad
             sumProbabilities += (1 / odd);
 
+            let currentWin = 0;
             if (result === 'winning') {
                 wins++;
-                totalProfit += (odd - 1);
-            } else {
-                totalProfit -= 1;
+                currentWin = (odd - 1);
+            } else if (result === 'losing') {
+                currentWin = -1;
             }
+            
+            totalProfit += currentWin;
+            profitHistory.push(Number(totalProfit.toFixed(2)));
 
-            // Agregar a la tabla visual (primeras 5 columnas para referencia)
+            // Calcular Max Drawdown
+            if (totalProfit > maxProfitSoFar) maxProfitSoFar = totalProfit;
+            let currentDrawdown = maxProfitSoFar - totalProfit;
+            if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown;
+
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${cols[0]}</td><td>${cols[2]}</td><td>${cols[4]}</td><td>${cols[5]}</td><td>${cols[36]}</td>`;
+            tr.innerHTML = `<td>${cols[0]}</td><td>${cols[2]}</td><td>${cols[4]}</td><td>${cols[5]}</td>
+                            <td style="color:${result === 'winning' ? 'green' : 'red'}">${cols[36]}</td>
+                            <td>${totalProfit.toFixed(2)}u</td>`;
             tableBody.appendChild(tr);
         }
     });
 
     if (totalBets === 0) {
-        alert("No se detectaron datos válidos. Asegúrate de copiar las columnas correctamente.");
+        alert("No se encontraron datos válidos. Revisa el formato.");
         return;
     }
 
-    // Cálculos Estadísticos
-    const winRate = (wins / totalBets) * 100;
-    const yieldPercentage = (totalProfit / totalStaked) * 100;
-    const expectedWins = sumProbabilities; // Cuántas deberías ganar según las cuotas
-    
-    // P-Value usando aproximación Normal para la distribución de aciertos
-    // Standard Error = sqrt(n * p * q)
+    // Estadísticas
+    const yieldPct = (totalProfit / totalStaked) * 100;
     const avgProb = sumProbabilities / totalBets;
+    const expectedWins = sumProbabilities;
     const stdDev = Math.sqrt(totalBets * avgProb * (1 - avgProb));
     const zScore = (wins - expectedWins) / stdDev;
-    
-    // Función Error para calcular P-value (distribución normal)
     const pValue = 1 - 0.5 * (1 + erf(zScore / Math.sqrt(2)));
 
-    // Mostrar resultados
+    // Mostrar UI
     document.getElementById('output').style.display = 'block';
     document.getElementById('totalBets').innerText = totalBets;
-    document.getElementById('winRate').innerText = winRate.toFixed(2) + '%';
-    document.getElementById('yield').innerText = yieldPercentage.toFixed(2) + '%';
+    document.getElementById('yield').innerText = yieldPct.toFixed(2) + '%';
     document.getElementById('pValue').innerText = pValue.toFixed(4);
+    document.getElementById('drawdown').innerText = '-' + maxDrawdown.toFixed(2) + 'u';
+    document.getElementById('totalProfit').innerText = totalProfit.toFixed(2) + 'u';
 
-    const interpretation = document.getElementById('interpretation');
+    // Interpretación
+    const interDiv = document.getElementById('interpretation');
     if (pValue < 0.05) {
-        interpretation.className = "interpretation sig-true";
-        interpretation.innerHTML = `<strong>Resultado Estadísticamente Significativo:</strong> El P-value es menor a 0.05 (${pValue.toFixed(4)}). Esto sugiere que hay menos del 5% de probabilidad de que tus resultados sean por pura suerte. Tu ventaja (edge) parece real.`;
+        interDiv.className = "interpretation sig-true";
+        interDiv.innerHTML = `<strong>¡Ventaja confirmada!</strong> El P-value (${pValue.toFixed(4)}) indica que tus resultados son sólidos. Solo hay un ${(pValue*100).toFixed(2)}% de probabilidad de que esto sea suerte.`;
     } else {
-        interpretation.className = "interpretation sig-false";
-        interpretation.innerHTML = `<strong>Resultado No Significativo:</strong> El P-value es mayor a 0.05 (${pValue.toFixed(4)}). No hay evidencia estadística suficiente para descartar la suerte. Necesitas una muestra más grande o revisar tu modelo.`;
+        interDiv.className = "interpretation sig-false";
+        interDiv.innerHTML = `<strong>Varianza detectada:</strong> El P-value (${pValue.toFixed(4)}) es alto. Es posible que los resultados positivos actuales sean temporales o necesites una muestra mayor para confirmar tu edge.`;
     }
+
+    // Gráfica
+    renderChart(profitHistory);
 }
 
-// Función matemática Error (ERF) para aproximación de P-Value
+function renderChart(dataPoints) {
+    const ctx = document.getElementById('profitChart').getContext('2d');
+    if (myChart) myChart.destroy();
+    
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dataPoints.map((_, i) => i),
+            datasets: [{
+                label: 'Beneficio Acumulado (Unidades)',
+                data: dataPoints,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: '#e2e8f0' }, title: { display: true, text: 'Unidades' } },
+                x: { grid: { display: false }, title: { display: true, text: 'Número de Apuestas' } }
+            }
+        }
+    });
+}
+
 function erf(x) {
-    const a1 =  0.254829592; const a2 = -0.284496736; const a3 =  1.421413741;
-    const a4 = -1.453152027; const a5 =  1.061405429; const p  =  0.3275911;
+    const a = [0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429];
+    const p = 0.3275911;
     const sign = (x < 0) ? -1 : 1;
     x = Math.abs(x);
     const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    const y = 1.0 - (((((a[4] * t + a[3]) * t) + a[2]) * t + a[1]) * t + a[0]) * t * Math.exp(-x * x);
     return sign * y;
 }
 </script>
-
 </body>
 </html>
