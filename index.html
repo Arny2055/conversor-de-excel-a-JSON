@@ -3,191 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Intelligence - Omni-Format</title>
+    <title>Poisson Intelligence - Strategy Optimizer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0a0f1e; --panel: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
+        :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --win: #10b981; --loss: #ef4444; --text: #f1f5f9; --gold: #fbbf24; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; line-height: 1.4; }
-        
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1200px; margin: auto; }
-        .header { text-align: center; padding: 15px 0; border-bottom: 1px solid #2d3748; margin-bottom: 15px; }
-        .header h1 { color: var(--accent); margin: 0; font-size: 1.6rem; letter-spacing: 1px; }
-
-        .input-box { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #2d3748; margin-bottom: 15px; }
-        textarea { width: 100%; height: 80px; background: #050811; border: 1px solid #475569; border-radius: 8px; color: var(--accent); padding: 10px; font-size: 11px; font-family: monospace; }
         
-        .btn { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-
-        /* Dashboard */
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding: 15px 0; }
+        .input-area { background: var(--panel); padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #334155; }
+        textarea { width: 100%; height: 70px; background: #0a0f1e; border: 1px solid #475569; border-radius: 8px; color: var(--accent); padding: 10px; font-size: 11px; }
         
-        .stat-card { background: var(--panel); padding: 15px; border-radius: 10px; text-align: center; border-bottom: 3px solid #334155; }
-        .stat-card small { color: #94a3b8; font-size: 0.7rem; display: block; text-transform: uppercase; margin-bottom: 5px; }
-        .stat-card span { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
+        .btn { background: var(--accent); color: var(--bg); border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
 
-        .insight-card { background: rgba(0, 242, 255, 0.05); border-left: 4px solid var(--accent); padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem; }
-        
-        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 300px; margin-bottom: 15px; border: 1px solid #2d3748; }
+        /* Reporte de Mejora */
+        .advisor-box { background: linear-gradient(145deg, #1e293b, #111827); border: 1px solid var(--gold); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .advisor-box h2 { color: var(--gold); margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .advice-item { background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent); font-size: 0.9rem; }
+        .advice-item b { color: var(--accent); }
 
-        .table-wrapper { overflow-x: auto; background: var(--panel); border-radius: 10px; border: 1px solid #2d3748; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 0.8rem; }
-        th { background: #1c2539; padding: 12px; text-align: left; color: var(--accent); }
-        td { padding: 10px; border-bottom: 1px solid #2d3748; }
-        
-        .Winning { color: var(--win); font-weight: bold; }
-        .Losing { color: var(--loss); font-weight: bold; }
+        /* KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .kpi-card { background: var(--panel); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
+        .kpi-card small { color: #94a3b8; font-size: 0.7rem; display: block; margin-bottom: 5px; }
+        .kpi-card span { font-size: 1.2rem; font-weight: bold; }
+
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 300px; border: 1px solid #334155; }
+
+        .scroll-table { overflow-x: auto; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.8rem; }
+        th { background: #334155; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+        .win { color: var(--win); font-weight: bold; }
+        .loss { color: var(--loss); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>POISSON <span style="color:white">ELITE BI</span></h1>
-        <small style="color: #94a3b8;">Soporte Multi-Formato & Insights Predictivos</small>
+        <h1>POISSON <span style="color:var(--accent)">ADVISOR</span></h1>
+        <small>Smart Optimization Engine</small>
     </div>
 
-    <div class="input-box">
-        <textarea id="rawInput" placeholder="Pega aquí tu historial (detecta automáticamente ambos formatos)..."></textarea>
-        <button class="btn" onclick="processData()">Ejecutar Análisis Omni-Format</button>
+    <div class="input-area">
+        <textarea id="rawInput" placeholder="Pega tu historial aquí..."></textarea>
+        <button class="btn" onclick="startAnalysis()">Analizar y Sugerir Mejoras</button>
     </div>
 
-    <div id="dashboard" style="display:none;">
-        <div class="insight-card" id="ai-insight"></div>
-
-        <div class="stats-grid">
-            <div class="stat-card"><small>Yield / ROI</small><span id="s-yield">0%</span></div>
-            <div class="stat-card" id="p-card"><small>P-Value</small><span id="s-p">0.00</span></div>
-            <div class="stat-card"><small>Edge Real</small><span id="s-edge">0%</span></div>
-            <div class="stat-card"><small>Max Drawdown</small><span id="s-dd" style="color: var(--loss)">0u</span></div>
+    <div id="results" style="display:none;">
+        <div class="advisor-box">
+            <h2>&#128161; Sugerencias de Mejora Estratégica</h2>
+            <div id="adviceList"></div>
         </div>
 
-        <div class="chart-box"><canvas id="equityChart"></canvas></div>
+        <div class="kpi-grid">
+            <div class="kpi-card"><small>YIELD</small><span id="k-yield">0%</span></div>
+            <div class="kpi-card"><small>P-VALUE</small><span id="k-p">0.00</span></div>
+            <div class="kpi-card"><small>DRAWDOWN</small><span id="k-dd" style="color:var(--loss)">0u</span></div>
+            <div class="kpi-card"><small>EFFICIENCY</small><span id="k-eff">0%</span></div>
+        </div>
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>Partido</th><th>Liga</th><th>Cuota</th><th>Resultado</th><th>Profit</th></tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
+        <div class="charts-grid">
+            <div class="chart-box"><canvas id="mainChart"></canvas></div>
+            <div class="chart-box"><canvas id="leagueChart"></canvas></div>
         </div>
     </div>
 </div>
 
 <script>
-let chart = null;
+let charts = {};
 
-function processData() {
+function startAnalysis() {
     const raw = document.getElementById('rawInput').value.trim();
     if(!raw) return;
 
     const rows = raw.split('\n');
-    let picks = [];
-
-    rows.forEach(row => {
-        const c = row.split('\t').map(s => s.trim());
-        if (c.length < 10) return;
-
+    let db = [];
+    rows.forEach(r => {
+        const c = r.split('\t').map(s => s.trim());
         let odd, res, league, match;
-
-        // LÓGICA DE DETECCIÓN DE FORMATO (OMNI-DETECTOR)
-        // Buscamos la columna "Result" que suele contener "Winning" o "Losing"
-        // En formato 1 está en la 36. En formato 2 está en la 29.
         
-        if (c[36] && (c[36].toLowerCase() === 'winning' || c[36].toLowerCase() === 'losing')) {
-            // Formato 1
-            odd = parseFloat(c[2]);
-            res = c[36];
-            league = c[4];
-            match = c[5];
-        } else if (c[29] && (c[29].toLowerCase() === 'winning' || c[29].toLowerCase() === 'losing')) {
-            // Formato 2
-            odd = parseFloat(c[2]);
-            res = c[29];
-            league = c[4];
-            match = c[5];
+        // Detección multi-formato
+        if (c[36] && (c[36].toLowerCase().includes('win') || c[36].toLowerCase().includes('los'))) {
+            odd = parseFloat(c[2]); res = c[36].toLowerCase(); league = c[4]; match = c[5];
+        } else if (c[29] && (c[29].toLowerCase().includes('win') || c[29].toLowerCase().includes('los'))) {
+            odd = parseFloat(c[2]); res = c[29].toLowerCase(); league = c[4]; match = c[5];
         }
 
         if(!isNaN(odd) && res) {
-            picks.push({
-                match, league, odd, res,
-                profit: res.toLowerCase() === 'winning' ? (odd - 1) : -1,
-                prob: 1/odd
-            });
+            db.push({ match, league, odd, res, profit: res === 'winning' ? (odd-1) : -1, prob: 1/odd });
         }
     });
 
-    if(picks.length === 0) return alert("No se detectaron datos válidos. Revisa el formato.");
-    render(picks);
+    if(db.length === 0) return alert("No se detectaron datos válidos.");
+    
+    document.getElementById('results').style.display = 'block';
+    renderAdvisor(db);
 }
 
-function render(data) {
-    document.getElementById('dashboard').style.display = 'block';
-    const n = data.length;
-    const wins = data.filter(x => x.res.toLowerCase() === 'winning').length;
-    const profit = data.reduce((a, b) => a + b.profit, 0);
-    const yieldPct = (profit / n) * 100;
+function renderAdvisor(db) {
+    const n = db.length;
+    const wins = db.filter(x => x.res === 'winning').length;
+    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
+    const yieldPct = (totalProfit / n) * 100;
     
-    // P-Value y Varianza
-    const expWins = data.reduce((a, b) => a + b.prob, 0);
-    const vari = data.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
-    const z = (wins - expWins) / Math.sqrt(vari);
+    // P-Value
+    const expWins = db.reduce((a, b) => a + b.prob, 0);
+    const variance = db.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
+    const z = (wins - expWins) / Math.sqrt(variance);
     const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
 
-    // Drawdown
-    let cur = 0, peak = 0, mdd = 0, history = [0];
-    data.forEach(x => {
-        cur += x.profit;
-        history.push(cur);
-        if(cur > peak) peak = cur;
-        if(peak - cur > mdd) mdd = peak - cur;
-    });
+    // Lógicas de Sugerencia
+    const adviceList = document.getElementById('adviceList');
+    let adviceHtml = "";
 
-    // UI
-    document.getElementById('s-yield').innerText = yieldPct.toFixed(2) + '%';
-    document.getElementById('s-p').innerText = pValue.toFixed(4);
-    document.getElementById('s-dd').innerText = '-' + mdd.toFixed(2) + 'u';
-    document.getElementById('s-edge').innerText = ((wins/n - expWins/n)*100).toFixed(1) + '%';
+    // 1. Sugerencia de Ligas
+    const lMap = {};
+    db.forEach(x => { lMap[x.league] = (lMap[x.league] || 0) + x.profit; });
+    const sortedLigas = Object.entries(lMap).sort((a,b) => a[1] - b[1]);
+    const toxicLeague = sortedLigas[0];
     
-    // Insights Inteligentes
-    const insight = document.getElementById('ai-insight');
-    if(pValue < 0.05) {
-        insight.innerHTML = `<b>&#128640; SISTEMA VALIDADO:</b> Tu ventaja no es casualidad. El modelo Poisson está batiendo la probabilidad implícita con alta confianza.`;
-        document.getElementById('p-card').style.borderColor = "var(--win)";
-    } else {
-        insight.innerHTML = `<b>&#9888; PRECAUCIÓN:</b> P-Value alto (${pValue.toFixed(3)}). No hay pruebas suficientes de que tu beneficio sea por habilidad. Podría ser varianza positiva.`;
-        document.getElementById('p-card').style.borderColor = "var(--loss)";
+    if(toxicLeague[1] < 0) {
+        adviceHtml += `<div class="advice-item"><b>Elimina Ligas Tóxicas:</b> Tu rendimiento en <u>${toxicLeague[0]}</u> es negativo (${toxicLeague[1].toFixed(2)}u). Dejar de apostar aquí aumentaría tu Yield inmediatamente.</div>`;
     }
 
-    // Chart
-    if(chart) chart.destroy();
-    chart = new Chart(document.getElementById('equityChart'), {
+    // 2. Sugerencia de Cuotas (Rango de Oro)
+    const ranges = { low: [], mid: [], high: [] };
+    db.forEach(x => {
+        if(x.odd < 1.7) ranges.low.push(x.profit);
+        else if(x.odd < 2.2) ranges.mid.push(x.profit);
+        else ranges.high.push(x.profit);
+    });
+    
+    const profits = { 
+        "Cuotas Bajas (<1.70)": ranges.low.reduce((a,b)=>a+b,0),
+        "Cuotas Medias (1.70-2.20)": ranges.mid.reduce((a,b)=>a+b,0),
+        "Cuotas Altas (>2.20)": ranges.high.reduce((a,b)=>a+b,0)
+    };
+    const bestRange = Object.entries(profits).sort((a,b) => b[1] - a[1])[0];
+    adviceHtml += `<div class="advice-item"><b>Focaliza tu Stake:</b> Tu mayor beneficio proviene de <b>${bestRange[0]}</b>. Considera especializarte en este rango de cuotas.</div>`;
+
+    // 3. Sugerencia de Varianza
+    if(pValue > 0.1) {
+        adviceHtml += `<div class="advice-item"><b>Control de Riesgo:</b> Tu P-Value es alto. No subas el stake todavía; los datos sugieren que podrías estar en una racha de suerte.</div>`;
+    } else {
+        adviceHtml += `<div class="advice-item"><b>Escalabilidad:</b> Sistema sólido. Podrías aplicar un Interés Compuesto moderado (incremento de stake del 5% cada 20 unidades de beneficio).</div>`;
+    }
+
+    adviceList.innerHTML = adviceHtml;
+
+    // Actualizar KPIs
+    document.getElementById('k-yield').innerText = yieldPct.toFixed(2) + '%';
+    document.getElementById('k-p').innerText = pValue.toFixed(4);
+    document.getElementById('k-eff').innerText = ((wins/expWins)*100).toFixed(1) + '%';
+    
+    updateVisuals(db);
+}
+
+function updateVisuals(db) {
+    if(charts.e) charts.e.destroy();
+    if(charts.l) charts.l.destroy();
+
+    const ctxE = document.getElementById('mainChart').getContext('2d');
+    let cur = 0;
+    charts.e = new Chart(ctxE, {
         type: 'line',
         data: {
-            labels: history.map((_,i)=>i),
-            datasets: [{
-                label: 'Unidades',
-                data: history,
-                borderColor: '#00f2ff',
-                backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 0
-            }]
+            labels: db.map((_,i)=>i),
+            datasets: [{ label: 'Equity', data: db.map(x => cur += x.profit), borderColor: '#38bdf8', fill: true, backgroundColor: 'rgba(56,189,248,0.1)', pointRadius: 0 }]
         },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+        options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Evolución de Unidades', color: '#fff' } } }
     });
 
-    // Table
-    document.getElementById('tableBody').innerHTML = data.slice(-15).reverse().map(x => `
-        <tr>
-            <td>${x.match}</td><td>${x.league}</td><td>${x.odd.toFixed(2)}</td>
-            <td class="${x.res}">${x.res.toUpperCase()}</td>
-            <td style="color:${x.profit > 0 ? 'var(--win)' : 'var(--loss)'}">${x.profit.toFixed(2)}u</td>
-        </tr>
-    `).join('');
+    const ctxL = document.getElementById('leagueChart').getContext('2d');
+    const lNames = [...new Set(db.map(x => x.league))].slice(0,6);
+    const lProfits = lNames.map(name => db.filter(x => x.league === name).reduce((a,b)=>a+b.profit,0));
+    
+    charts.l = new Chart(ctxL, {
+        type: 'bar',
+        data: {
+            labels: lNames,
+            datasets: [{ label: 'Profit por Liga', data: lProfits, backgroundColor: lProfits.map(v => v>0?'#10b981':'#ef4444') }]
+        },
+        options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Rentabilidad por Liga (Top 6)', color: '#fff' } } }
+    });
 }
 
 function erf(x) {
