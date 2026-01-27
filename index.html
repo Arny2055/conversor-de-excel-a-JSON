@@ -3,227 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Progol Predictor - Sistema Inteligente</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Calculadora de P-Value - Análisis de Apuestas</title>
     <style>
-        .active-l { background-color: #ef4444 !important; color: white; transform: scale(1.05); }
-        .active-e { background-color: #f59e0b !important; color: white; transform: scale(1.05); }
-        .active-v { background-color: #3b82f6 !important; color: white; transform: scale(1.05); }
-        .prob-bar { height: 4px; border-radius: 2px; transition: width 0.5s ease-in-out; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        textarea { width: 100%; height: 150px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; font-family: monospace; }
+        button { background-color: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #219150; }
+        .results { margin-top: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .card { background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center; border-left: 5px solid #27ae60; }
+        .card h3 { margin: 0; font-size: 14px; color: #7f8c8d; text-transform: uppercase; }
+        .card p { margin: 10px 0 0; font-size: 22px; font-weight: bold; color: #2c3e50; }
+        .interpretation { margin-top: 20px; padding: 15px; border-radius: 6px; line-height: 1.6; }
+        .sig-true { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .sig-false { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #2c3e50; color: white; }
     </style>
 </head>
-<body class="bg-slate-900 min-h-screen font-sans text-slate-200">
+<body>
 
-    <div class="max-w-5xl mx-auto py-8 px-4">
-        <div class="bg-slate-800 rounded-t-2xl shadow-2xl p-6 border-b border-slate-700">
-            <div class="flex flex-col md:flex-row justify-between items-center text-center md:text-left">
-                <div>
-                    <h1 class="text-4xl font-black text-white tracking-tight">PROGOL <span class="text-indigo-500 text-2xl">AI ENGINE</span></h1>
-                    <p class="text-slate-400 mt-1 italic">Sistema de predicción basado en pesos y localía 2026</p>
-                </div>
-                <div class="mt-6 md:mt-0 flex gap-4">
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
-                        <div class="text-xs text-indigo-400 font-bold uppercase">Costo Sugerido</div>
-                        <div class="text-2xl font-mono text-green-400" id="totalCost">$0.00</div>
-                    </div>
-                </div>
+<div class="container">
+    <h1>Análisis de P-Value y Rendimiento</h1>
+    <p>Pega aquí las filas de tu historial (incluyendo la cabecera o solo los datos):</p>
+    <textarea id="csvData" placeholder="Copia y pega desde Excel aquí..."></textarea>
+    <button onclick="processData()">Calcular Resultados</button>
+
+    <div id="output" style="display:none;">
+        <div class="results">
+            <div class="card">
+                <h3>Total Apuestas</h3>
+                <p id="totalBets">0</p>
+            </div>
+            <div class="card">
+                <h3>Win Rate</h3>
+                <p id="winRate">0%</p>
+            </div>
+            <div class="card">
+                <h3>Yield / ROI</h3>
+                <p id="yield">0%</p>
+            </div>
+            <div class="card">
+                <h3>P-Value</h3>
+                <p id="pValue">0</p>
             </div>
         </div>
 
-        <div class="bg-indigo-600 p-4 flex flex-wrap justify-around items-center gap-4">
-            <div class="flex items-center gap-2">
-                <label class="font-bold text-sm">Sesgo Local:</label>
-                <input type="range" id="biasRange" min="0" max="100" value="45" class="accent-slate-900">
-                <span id="biasVal" class="text-xs font-mono bg-indigo-800 px-2 py-1 rounded">45%</span>
-            </div>
-            <button onclick="smartPredict()" class="bg-white text-indigo-600 hover:bg-indigo-50 px-6 py-2 rounded-full font-black shadow-lg transition transform hover:scale-105">
-                <i class="fas fa-robot mr-2"></i> EJECUTAR PREDICCIÓN AI
-            </button>
-            <button onclick="clearPool()" class="text-indigo-200 hover:text-white text-sm font-bold">
-                <i class="fas fa-undo mr-1"></i> Reiniciar
-            </button>
-        </div>
-
-        <div class="bg-slate-800 shadow-2xl overflow-x-auto">
-            <table class="w-full text-left">
+        <div id="interpretation" class="interpretation"></div>
+        
+        <h3>Resumen de Datos Procesados</h3>
+        <div style="overflow-x:auto;">
+            <table id="dataTable">
                 <thead>
-                    <tr class="bg-slate-700/50 text-slate-300 text-xs uppercase tracking-wider">
-                        <th class="py-4 px-6 text-center">Jornada</th>
-                        <th class="py-4 px-6">Encuentro (Ingresa Equipos)</th>
-                        <th class="py-4 px-6 text-center">Probabilidad</th>
-                        <th class="py-4 px-6 text-center">Tu Selección</th>
-                    </tr>
+                    <tr id="tableHeader"></tr>
                 </thead>
-                <tbody id="matchTable">
-                    </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
-
-        <div class="bg-slate-800 p-6 rounded-b-2xl border-t border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="text-sm text-slate-400">
-                <h4 class="font-bold text-white mb-2">¿Cómo funciona la predicción?</h4>
-                <ul class="list-disc ml-4 space-y-1">
-                    <li>Analiza la ventaja estadística del equipo local.</li>
-                    <li>Calcula la probabilidad de empate según el sesgo configurado.</li>
-                    <li>Genera una quiniela balanceada para maximizar aciertos.</li>
-                </ul>
-            </div>
-            <div class="flex justify-end items-center">
-                <button onclick="saveToLocal()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg">
-                    <i class="fas fa-cloud-upload-alt mr-2"></i> GUARDAR EN LA NUBE (LOCAL)
-                </button>
-            </div>
-        </div>
     </div>
+</div>
 
-    <script>
-        const PRICE_SINGLE = 15;
-        const totalMatches = 14;
-        let selections = Array.from({ length: totalMatches }, () => ({
-            L: false, E: false, V: false, localTeam: '', visitorTeam: '', probs: [33, 34, 33]
-        }));
+<script>
+function processData() {
+    const rawData = document.getElementById('csvData').value.trim();
+    if (!rawData) return;
 
-        const biasSlider = document.getElementById('biasRange');
-        biasSlider.oninput = function() {
-            document.getElementById('biasVal').innerText = this.value + '%';
-        }
+    const rows = rawData.split('\n');
+    let wins = 0;
+    let totalBets = 0;
+    let totalProfit = 0;
+    let totalStaked = 0;
+    let sumProbabilities = 0;
 
-        function initTable() {
-            const tableBody = document.getElementById('matchTable');
-            tableBody.innerHTML = '';
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
 
-            for (let i = 0; i < totalMatches; i++) {
-                const row = document.createElement('tr');
-                row.className = "border-b border-slate-700/50 hover:bg-slate-700/20 transition";
-                row.innerHTML = `
-                    <td class="py-4 px-6 text-center font-mono text-slate-500">${i + 1}</td>
-                    <td class="py-4 px-6">
-                        <div class="flex items-center gap-3">
-                            <input type="text" placeholder="Local" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:border-indigo-500 outline-none" onchange="updateTeamName(${i}, 'local', this.value)" id="local-${i}">
-                            <span class="text-indigo-500 font-bold italic">VS</span>
-                            <input type="text" placeholder="Visitante" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm w-full focus:border-indigo-500 outline-none" onchange="updateTeamName(${i}, 'visitor', this.value)" id="visitor-${i}">
-                        </div>
-                    </td>
-                    <td class="py-4 px-6 w-48">
-                        <div class="flex h-2 w-full bg-slate-700 rounded-full overflow-hidden mb-1">
-                            <div id="pb-L-${i}" class="bg-red-500" style="width: 33%"></div>
-                            <div id="pb-E-${i}" class="bg-amber-500" style="width: 34%"></div>
-                            <div id="pb-V-${i}" class="bg-blue-500" style="width: 33%"></div>
-                        </div>
-                        <div class="flex justify-between text-[10px] font-bold text-slate-500">
-                            <span id="txt-L-${i}">33%</span>
-                            <span id="txt-E-${i}">34%</span>
-                            <span id="txt-V-${i}">33%</span>
-                        </div>
-                    </td>
-                    <td class="py-4 px-6">
-                        <div class="flex justify-center gap-2">
-                            <button onclick="toggleSelection(${i}, 'L')" id="btn-${i}-L" class="w-10 h-10 rounded-lg border border-slate-600 font-black transition-all">L</button>
-                            <button onclick="toggleSelection(${i}, 'E')" id="btn-${i}-E" class="w-10 h-10 rounded-lg border border-slate-600 font-black transition-all">E</button>
-                            <button onclick="toggleSelection(${i}, 'V')" id="btn-${i}-V" class="w-10 h-10 rounded-lg border border-slate-600 font-black transition-all">V</button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(row);
+    rows.forEach((row, index) => {
+        const cols = row.split('\t');
+        
+        // Ignorar cabecera si existe (buscando si la columna 'Odd' es un número)
+        const odd = parseFloat(cols[2]);
+        const result = cols[36] ? cols[36].trim().toLowerCase() : "";
+
+        if (!isNaN(odd) && result !== "") {
+            totalBets++;
+            totalStaked += 1; // Asumimos flat stake de 1 unidad
+
+            // Probabilidad implícita (1/cuota)
+            sumProbabilities += (1 / odd);
+
+            if (result === 'winning') {
+                wins++;
+                totalProfit += (odd - 1);
+            } else {
+                totalProfit -= 1;
             }
-            loadFromLocal();
+
+            // Agregar a la tabla visual (primeras 5 columnas para referencia)
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${cols[0]}</td><td>${cols[2]}</td><td>${cols[4]}</td><td>${cols[5]}</td><td>${cols[36]}</td>`;
+            tableBody.appendChild(tr);
         }
+    });
 
-        // MOTOR DE PREDICCIÓN
-        function smartPredict() {
-            const localBias = parseInt(biasSlider.value);
-            
-            selections.forEach((sel, i) => {
-                // Algoritmo de probabilidad
-                // Se basa en el sesgo de localía y genera variaciones aleatorias normales
-                let probL = Math.floor(Math.random() * 20) + (localBias - 10);
-                let probE = Math.floor(Math.random() * 25) + 15;
-                let probV = 100 - probL - probE;
+    if (totalBets === 0) {
+        alert("No se detectaron datos válidos. Asegúrate de copiar las columnas correctamente.");
+        return;
+    }
 
-                if (probV < 0) { probE += probV; probV = 0; }
+    // Cálculos Estadísticos
+    const winRate = (wins / totalBets) * 100;
+    const yieldPercentage = (totalProfit / totalStaked) * 100;
+    const expectedWins = sumProbabilities; // Cuántas deberías ganar según las cuotas
+    
+    // P-Value usando aproximación Normal para la distribución de aciertos
+    // Standard Error = sqrt(n * p * q)
+    const avgProb = sumProbabilities / totalBets;
+    const stdDev = Math.sqrt(totalBets * avgProb * (1 - avgProb));
+    const zScore = (wins - expectedWins) / stdDev;
+    
+    // Función Error para calcular P-value (distribución normal)
+    const pValue = 1 - 0.5 * (1 + erf(zScore / Math.sqrt(2)));
 
-                sel.probs = [probL, probE, probV];
+    // Mostrar resultados
+    document.getElementById('output').style.display = 'block';
+    document.getElementById('totalBets').innerText = totalBets;
+    document.getElementById('winRate').innerText = winRate.toFixed(2) + '%';
+    document.getElementById('yield').innerText = yieldPercentage.toFixed(2) + '%';
+    document.getElementById('pValue').innerText = pValue.toFixed(4);
 
-                // Seleccionar el resultado más probable
-                const max = Math.max(probL, probE, probV);
-                sel.L = (probL === max);
-                sel.E = (probE === max);
-                sel.V = (probV === max);
+    const interpretation = document.getElementById('interpretation');
+    if (pValue < 0.05) {
+        interpretation.className = "interpretation sig-true";
+        interpretation.innerHTML = `<strong>Resultado Estadísticamente Significativo:</strong> El P-value es menor a 0.05 (${pValue.toFixed(4)}). Esto sugiere que hay menos del 5% de probabilidad de que tus resultados sean por pura suerte. Tu ventaja (edge) parece real.`;
+    } else {
+        interpretation.className = "interpretation sig-false";
+        interpretation.innerHTML = `<strong>Resultado No Significativo:</strong> El P-value es mayor a 0.05 (${pValue.toFixed(4)}). No hay evidencia estadística suficiente para descartar la suerte. Necesitas una muestra más grande o revisar tu modelo.`;
+    }
+}
 
-                // Opcional: Si la diferencia es muy poca, sugerir Doble (Lógica Pro)
-                if (Math.abs(probL - probE) < 5) sel.E = true;
-            });
-            updateUI();
-        }
+// Función matemática Error (ERF) para aproximación de P-Value
+function erf(x) {
+    const a1 =  0.254829592; const a2 = -0.284496736; const a3 =  1.421413741;
+    const a4 = -1.453152027; const a5 =  1.061405429; const p  =  0.3275911;
+    const sign = (x < 0) ? -1 : 1;
+    x = Math.abs(x);
+    const t = 1.0 / (1.0 + p * x);
+    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return sign * y;
+}
+</script>
 
-        function toggleSelection(index, type) {
-            selections[index][type] = !selections[index][type];
-            updateUI();
-        }
-
-        function updateTeamName(index, side, value) {
-            if (side === 'local') selections[index].localTeam = value;
-            else selections[index].visitorTeam = value;
-        }
-
-        function updateUI() {
-            selections.forEach((sel, i) => {
-                // Actualizar Botones
-                document.getElementById(`btn-${i}-L`).className = `w-10 h-10 rounded-lg border font-black transition-all ${sel.L ? 'active-l' : 'border-slate-600 text-slate-500'}`;
-                document.getElementById(`btn-${i}-E`).className = `w-10 h-10 rounded-lg border font-black transition-all ${sel.E ? 'active-e' : 'border-slate-600 text-slate-500'}`;
-                document.getElementById(`btn-${i}-V`).className = `w-10 h-10 rounded-lg border font-black transition-all ${sel.V ? 'active-v' : 'border-slate-600 text-slate-500'}`;
-                
-                // Actualizar Barras de Probabilidad
-                document.getElementById(`pb-L-${i}`).style.width = sel.probs[0] + '%';
-                document.getElementById(`pb-E-${i}`).style.width = sel.probs[1] + '%';
-                document.getElementById(`pb-V-${i}`).style.width = sel.probs[2] + '%';
-                
-                document.getElementById(`txt-L-${i}`).innerText = sel.probs[0] + '%';
-                document.getElementById(`txt-E-${i}`).innerText = sel.probs[1] + '%';
-                document.getElementById(`txt-V-${i}`).innerText = sel.probs[2] + '%';
-
-                document.getElementById(`local-${i}`).value = sel.localTeam || '';
-                document.getElementById(`visitor-${i}`).value = sel.visitorTeam || '';
-            });
-            calculateCost();
-        }
-
-        function calculateCost() {
-            let doubles = 0, triples = 0, valid = true;
-            selections.forEach(sel => {
-                const count = [sel.L, sel.E, sel.V].filter(Boolean).length;
-                if (count === 0) valid = false;
-                if (count === 2) doubles++;
-                if (count === 3) triples++;
-            });
-            const cost = valid ? Math.pow(2, doubles) * Math.pow(3, triples) * PRICE_SINGLE : 0;
-            document.getElementById('totalCost').innerText = `$${cost.toLocaleString('es-MX')}`;
-        }
-
-        function clearPool() {
-            if(confirm('¿Reiniciar sistema de predicción?')) {
-                selections = Array.from({ length: totalMatches }, () => ({
-                    L: false, E: false, V: false, localTeam: '', visitorTeam: '', probs: [33, 34, 33]
-                }));
-                updateUI();
-            }
-        }
-
-        function saveToLocal() {
-            localStorage.setItem('progol_ai_data', JSON.stringify(selections));
-            alert('Sistema Actualizado: Pronósticos guardados.');
-        }
-
-        function loadFromLocal() {
-            const saved = localStorage.getItem('progol_ai_data');
-            if (saved) {
-                selections = JSON.parse(saved);
-                updateUI();
-            }
-        }
-
-        initTable();
-    </script>
 </body>
 </html>
