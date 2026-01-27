@@ -3,197 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Pro - Dynamic Stake Advisor</title>
+    <title>Poisson Intelligence - Backtesting Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #0a0f1e; --panel: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 1200px; margin: auto; }
         
-        /* Glassmorphism Effect */
         .glass { background: var(--panel); border: 1px solid #2d3748; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
-        
         textarea { width: 100%; height: 60px; background: #050811; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); padding: 10px; font-family: monospace; font-size: 11px; }
         .btn { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
 
-        /* Dynamic Stake Box */
-        .stake-advisor { background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid var(--gold); position: relative; overflow: hidden; }
-        .stake-advisor h2 { color: var(--gold); margin: 0 0 15px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
-        .stake-value { font-size: 2.5rem; font-weight: 900; color: var(--white); text-shadow: 0 0 10px var(--gold); }
-        .stake-meter { width: 100%; height: 10px; background: #334155; border-radius: 5px; margin: 10px 0; overflow: hidden; }
-        .stake-fill { height: 100%; background: var(--gold); transition: width 0.5s ease; }
+        .backtest-header { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .backtest-card { padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .flat { border-top: 4px solid var(--accent); }
+        .dynamic { border-top: 4px solid var(--gold); background: rgba(255, 215, 0, 0.05); }
 
-        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        @media (min-width: 768px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
-        .kpi-card { background: #1c2539; padding: 15px; border-radius: 12px; text-align: center; border-bottom: 3px solid #334155; }
-        .kpi-card small { color: #94a3b8; font-size: 0.65rem; display: block; text-transform: uppercase; }
-        .kpi-card span { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
-
-        .charts-row { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 1024px) { .charts-row { grid-template-columns: 2fr 1fr; } }
-        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 320px; border: 1px solid #2d3748; }
-
-        .winning { color: var(--win); }
-        .losing { color: var(--loss); }
+        .val { font-size: 1.8rem; font-weight: 900; display: block; margin: 5px 0; }
+        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 400px; border: 1px solid #2d3748; }
+        
+        .comparison-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+        .trend-up { color: var(--win); }
+        .trend-down { color: var(--loss); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="glass" style="text-align: center;">
-        <h1 style="margin:0; color:var(--accent);">POISSON <span style="color:#fff">DYNAMIC AI</span></h1>
-        <small>Smart Bankroll & Stake Management</small>
+        <h1 style="margin:0; color:var(--accent);">SIMULADOR DE <span style="color:#fff">BACKTESTING</span></h1>
+        <small>Comparativa: Stake Plano vs. Algoritmo Dinámico</small>
     </div>
 
     <div class="glass">
         <textarea id="rawInput" placeholder="Pega tu historial aquí..."></textarea>
-        <button class="btn" onclick="processAll()">Inyectar Datos y Calcular Riesgo</button>
+        <button class="btn" onclick="runBacktest()">EJECUTAR SIMULACIÓN COMPARATIVA</button>
     </div>
 
-    <div id="dashboard" style="display:none;">
-        <div class="glass stake-advisor">
-            <h2>&#128176; Próximo Stake Recomendado (Basado en últimos 10)</h2>
-            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <div>
-                    <div class="stake-value" id="stake-rec">1.00u</div>
-                    <div id="stake-desc" style="font-size: 0.85rem; color: #cbd5e1;">Analizando tendencia...</div>
-                </div>
-                <div style="text-align: right;">
-                    <small>CONFIANZA DEL MODELO</small>
-                    <div id="conf-val" style="font-size: 1.5rem; font-weight: bold; color: var(--gold);">0%</div>
-                </div>
+    <div id="resultsUI" style="display:none;">
+        <div class="backtest-header">
+            <div class="backtest-card flat">
+                <div class="comparison-label">Profit (Stake Plano)</div>
+                <span class="val" id="flat-profit">0.00u</span>
+                <small id="flat-yield">0% Yield</small>
             </div>
-            <div class="stake-meter"><div class="stake-fill" id="stake-bar" style="width: 50%;"></div></div>
+            <div class="backtest-card dynamic">
+                <div class="comparison-label">Profit (Stake Dinámico)</div>
+                <span class="val" id="dyn-profit" style="color: var(--gold);">0.00u</span>
+                <small id="dyn-yield">0% Yield</small>
+            </div>
         </div>
 
-        <div class="kpi-grid">
-            <div class="kpi-card"><small>Yield Total</small><span id="k-yield">0%</span></div>
-            <div class="kpi-card"><small>Eficiencia L10</small><span id="k-eff10">0%</span></div>
-            <div class="kpi-card"><small>P-Value</small><span id="k-p">0.00</span></div>
-            <div class="kpi-card"><small>Net Profit</small><span id="k-profit">0u</span></div>
-        </div>
+        <div class="glass" id="verdict-box" style="text-align: center; font-weight: bold; font-size: 1.1rem;"></div>
 
-        <div class="charts-row">
-            <div class="chart-box"><canvas id="mainChart"></canvas></div>
-            <div class="chart-box">
-                <h3 style="font-size: 0.9rem; margin: 0 0 10px 0; color: var(--accent);">Rendimiento por Liga</h3>
-                <div id="leagueStats" style="font-size: 0.8rem;"></div>
-            </div>
+        <div class="chart-box">
+            <canvas id="compChart"></canvas>
         </div>
     </div>
 </div>
 
 <script>
-let mainChart = null;
+let compChart = null;
 
-function processAll() {
-    const raw = document.getElementById('rawInput').value.trim();
-    if(!raw) return;
+function runBacktest() {
+    const input = document.getElementById('rawInput').value.trim();
+    if(!input) return;
 
-    const rows = raw.split('\n');
-    let db = [];
+    const rows = input.split('\n');
+    let picks = [];
     rows.forEach(r => {
         const c = r.split('\t').map(s => s.trim());
-        let odd, res, league, match;
+        let odd, res;
         if (c[36] && (c[36].toLowerCase().includes('win') || c[36].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[36].toLowerCase(); league = c[4]; match = c[5];
+            odd = parseFloat(c[2]); res = c[36].toLowerCase();
         } else if (c[29] && (c[29].toLowerCase().includes('win') || c[29].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[29].toLowerCase(); league = c[4]; match = c[5];
+            odd = parseFloat(c[2]); res = c[29].toLowerCase();
         }
-        if(!isNaN(odd) && res) {
-            db.push({ league, odd, res, profit: res === 'winning' ? (odd-1) : -1, prob: 1/odd });
-        }
+        if(!isNaN(odd) && res) picks.push({ odd, res });
     });
 
-    if(db.length === 0) return alert("Datos no válidos.");
-    document.getElementById('dashboard').style.display = 'block';
-    calculateDynamicRisk(db);
+    if(picks.length < 15) return alert("Necesitas al menos 15 picks para un backtest fiable.");
+
+    simulate(picks);
 }
 
-function calculateDynamicRisk(db) {
-    const n = db.length;
-    const last10 = db.slice(-10);
-    const wins10 = last10.filter(x => x.res === 'winning').length;
-    const profit10 = last10.reduce((a, b) => a + b.profit, 0);
-    
-    // Lógica de Stake Dinámico (Base 1 unidad)
-    // Ajustamos el stake según el ROI de los últimos 10 picks
-    let baseStake = 1.0;
-    let modifier = profit10 / 10; // Si ganas 5u en 10 picks, sumas 0.5 al stake.
-    let finalStake = Math.max(0.5, Math.min(2.5, baseStake + modifier)); // Límites de seguridad: 0.5u a 2.5u
+function simulate(picks) {
+    document.getElementById('resultsUI').style.display = 'block';
 
-    // Actualizar UI del Asesor
-    document.getElementById('stake-rec').innerText = finalStake.toFixed(2) + "u";
-    document.getElementById('conf-val').innerText = (wins10 * 10) + "%";
-    document.getElementById('stake-bar').style.width = (wins10 * 10) + "%";
-    
-    const desc = document.getElementById('stake-desc');
-    if(profit10 > 0) {
-        desc.innerHTML = `Tendencia <b class="winning">POSITIVA</b>. El modelo Poisson está caliente. Sugerido aumentar exposición.`;
-    } else if(profit10 < 0) {
-        desc.innerHTML = `Tendencia <b class="losing">NEGATIVA</b>. Reduciendo riesgo para proteger banca (Drawdown Control).`;
-    } else {
-        desc.innerHTML = `Tendencia estable. Mantener Stake plano de 1 unidad.`;
+    let flatHistory = [0];
+    let dynHistory = [0];
+    let flatProfit = 0;
+    let dynProfit = 0;
+    let totalStakedDyn = 0;
+
+    for(let i = 0; i < picks.length; i++) {
+        const p = picks[i];
+        const isWin = p.res === 'winning';
+        
+        // 1. Lógica Stake Plano
+        const flatGain = isWin ? (p.odd - 1) : -1;
+        flatProfit += flatGain;
+        flatHistory.push(Number(flatProfit.toFixed(2)));
+
+        // 2. Lógica Stake Dinámico (Mira los 10 anteriores)
+        let currentStake = 1.0;
+        if(i >= 10) {
+            const window = picks.slice(i-10, i);
+            const windowProfit = window.reduce((a, b) => a + (b.res === 'winning' ? (b.odd-1) : -1), 0);
+            // Algoritmo: Stake = 1 + (ProfitL10 / 10). Min 0.5, Max 2.5
+            currentStake = Math.max(0.5, Math.min(2.5, 1 + (windowProfit / 10)));
+        }
+
+        const dynGain = isWin ? (currentStake * (p.odd - 1)) : -currentStake;
+        dynProfit += dynGain;
+        totalStakedDyn += currentStake;
+        dynHistory.push(Number(dynProfit.toFixed(2)));
     }
 
-    // KPIs Generales
-    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
-    document.getElementById('k-yield').innerText = ((totalProfit/n)*100).toFixed(1) + "%";
-    document.getElementById('k-eff10').innerText = ((wins10/10)*100).toFixed(0) + "%";
-    document.getElementById('k-profit').innerText = totalProfit.toFixed(2) + "u";
+    // Actualizar UI
+    document.getElementById('flat-profit').innerText = flatProfit.toFixed(2) + "u";
+    document.getElementById('dyn-profit').innerText = dynProfit.toFixed(2) + "u";
+    
+    const flatY = (flatProfit / picks.length) * 100;
+    const dynY = (dynProfit / totalStakedDyn) * 100;
+    
+    document.getElementById('flat-yield').innerText = flatY.toFixed(2) + "% Yield";
+    document.getElementById('dyn-yield').innerText = dynY.toFixed(2) + "% Yield";
 
-    // P-Value
-    const expW = db.reduce((a, b) => a + b.prob, 0);
-    const vari = db.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
-    const z = (db.filter(x => x.res === 'winning').length - expW) / Math.sqrt(vari);
-    const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
-    document.getElementById('k-p').innerText = pValue.toFixed(4);
+    const verdict = document.getElementById('verdict-box');
+    if(dynProfit > flatProfit) {
+        verdict.innerHTML = `<span class="trend-up">¡EL ALGORITMO GANA!</span> Habrías ganado ${(dynProfit - flatProfit).toFixed(2)}u más con Stake Dinámico.`;
+        verdict.style.borderColor = "var(--win)";
+    } else {
+        verdict.innerHTML = `<span class="trend-down">STAKE PLANO ES MEJOR.</span> En este historial, la varianza no justificó el cambio de stake.`;
+        verdict.style.borderColor = "var(--loss)";
+    }
 
-    renderVisuals(db);
+    renderChart(flatHistory, dynHistory);
 }
 
-function renderVisuals(db) {
-    if(mainChart) mainChart.destroy();
-    let cur = 0;
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    mainChart = new Chart(ctx, {
+function renderChart(flat, dyn) {
+    const ctx = document.getElementById('compChart').getContext('2d');
+    if(compChart) compChart.destroy();
+    
+    compChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: db.map((_, i) => i),
-            datasets: [{
-                label: 'Crecimiento Real',
-                data: db.map(x => cur += x.profit),
-                borderColor: '#00f2ff',
-                fill: true,
-                backgroundColor: 'rgba(0, 242, 255, 0.05)',
-                pointRadius: 0
-            }]
+            labels: flat.map((_, i) => i),
+            datasets: [
+                {
+                    label: 'Stake Plano (1u)',
+                    data: flat,
+                    borderColor: '#00f2ff',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.2
+                },
+                {
+                    label: 'Algoritmo Dinámico',
+                    data: dyn,
+                    borderColor: '#ffd700',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.2
+                }
+            ]
         },
-        options: { maintainAspectRatio: false, scales: { x: { display: false } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#fff', font: { size: 12 } } }
+            },
+            scales: {
+                y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
+                x: { display: false }
+            }
+        }
     });
-
-    // Sidebar de Ligas
-    const lMap = {};
-    db.forEach(x => lMap[x.league] = (lMap[x.league] || 0) + x.profit);
-    const topL = Object.entries(lMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    
-    document.getElementById('leagueStats').innerHTML = topL.map(l => `
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #2d3748; padding-bottom:2px;">
-            <span>${l[0]}</span>
-            <b class="${l[1] >= 0 ? 'winning' : 'losing'}">${l[1] >= 0 ? '+' : ''}${l[1].toFixed(2)}u</b>
-        </div>
-    `).join('');
-}
-
-function erf(x) {
-    const a = [0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429];
-    const p = 0.3275911;
-    const sign = (x < 0) ? -1 : 1;
-    x = Math.abs(x);
-    const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a[4] * t + a[3]) * t) + a[2]) * t + a[1]) * t + a[0]) * t * Math.exp(-x * x);
-    return sign * y;
 }
 </script>
 </body>
