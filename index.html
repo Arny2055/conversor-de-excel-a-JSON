@@ -3,210 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Insights - Mobile Pro</title>
+    <title>Bookie Slayer v3.0 - Poisson Intelligence</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --win: #10b981; --loss: #ef4444; --text: #f1f5f9; --gold: #fbbf24; }
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        :root { --bg: #0a0f1e; --card: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 14px; }
         
-        .container { max-width: 100%; margin: auto; }
+        /* Layout */
+        .grid-main { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 1200px; margin: auto; }
+        @media (min-width: 1024px) { .grid-main { grid-template-columns: 350px 1fr; } }
+
+        /* Componentes */
+        .glass-card { background: var(--card); border: 1px solid #2d3748; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .input-area { width: 100%; height: 120px; background: #050811; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); padding: 12px; font-family: 'Fira Code', monospace; font-size: 11px; margin-bottom: 10px; }
         
-        /* Ajustes para Móvil */
-        .header { text-align: center; padding: 10px 0; border-bottom: 1px solid #334155; }
-        .header h1 { font-size: 1.5rem; margin: 5px 0; color: var(--accent); }
+        .btn-action { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-action:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--accent); }
 
-        .input-section { background: var(--panel); padding: 15px; border-radius: 12px; margin: 15px 0; }
-        textarea { width: 100%; height: 80px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: var(--accent); padding: 10px; font-size: 12px; }
+        /* Stats & Badges */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-item { background: #1c2539; padding: 15px; border-radius: 12px; text-align: center; border-bottom: 3px solid #334155; }
+        .stat-item.gold { border-color: var(--gold); }
+        .stat-val { font-size: 1.4rem; font-weight: 900; display: block; color: var(--accent); }
         
-        .btn { background: var(--accent); color: var(--bg); border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        /* Insights Box */
+        .insight-box { background: rgba(0, 242, 255, 0.05); border-left: 4px solid var(--accent); padding: 15px; margin-top: 20px; }
+        .insight-msg { margin-bottom: 10px; font-style: italic; color: #cbd5e1; }
 
-        /* Filtros Apilables en móvil */
-        .filters-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #2d3748; padding: 12px; border-radius: 12px; margin-bottom: 15px; }
-        .filter-group { display: flex; flex-direction: column; }
-        .filter-group label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; }
-        select, input { background: #0f172a; border: 1px solid #475569; color: white; padding: 8px; border-radius: 6px; font-size: 14px; width: 100%; }
-
-        /* Dashboard de Insights */
-        .insight-box { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--accent); padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        .insight-box h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--gold); display: flex; align-items: center; }
-        .insight-item { font-size: 0.85rem; margin-bottom: 8px; padding-left: 15px; position: relative; line-height: 1.4; }
-        .insight-item::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
-
-        /* KPIs */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--panel); padding: 12px; border-radius: 10px; text-align: center; }
-        .stat-card small { color: #94a3b8; font-size: 0.65rem; display: block; }
-        .stat-card span { font-size: 1.2rem; font-weight: bold; }
-
-        /* Gráficas */
-        .chart-box { background: var(--panel); padding: 10px; border-radius: 12px; height: 280px; margin-bottom: 15px; }
-
-        /* Tabla con Scroll */
-        .table-wrapper { overflow-x: auto; background: var(--panel); border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 0.75rem; }
-        th { background: #334155; padding: 10px; text-align: left; }
-        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
+        .table-container { overflow-x: auto; margin-top: 20px; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); }
+        th { background: #1c2539; padding: 12px; text-align: left; color: var(--accent); font-size: 11px; }
+        td { padding: 12px; border-bottom: 1px solid #2d3748; font-size: 12px; }
         
-        .win { color: var(--win); }
-        .loss { color: var(--loss); }
+        .winning { color: var(--win); font-weight: bold; }
+        .losing { color: var(--loss); font-weight: bold; }
+        
+        /* Animación de carga */
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .loading { animation: pulse 1.5s infinite; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>Poisson <span style="color:white">Intelligence</span></h1>
-        <small>v2.0 Mobile Optimized</small>
-    </div>
+<div class="grid-main">
+    <aside class="glass-card">
+        <h2 style="color: var(--accent); margin-top: 0;">TERMINAL V3.0</h2>
+        <p style="font-size: 11px; color: #94a3b8;">SISTEMA DE ANÁLISIS DE VARIANZA CRÍTICA</p>
+        
+        <textarea id="dataInput" class="input-area" placeholder="Pega el historial completo..."></textarea>
+        <button class="btn-action" onclick="analyzeHistory()">Inyectar Datos</button>
 
-    <div class="input-section">
-        <textarea id="rawInput" placeholder="Pega aquí tus datos de Excel..."></textarea>
-        <button class="btn" onclick="loadAndProcess()">ANALIZAR AHORA</button>
-    </div>
+        <div id="quickStats" style="display:none;">
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <small>EV TOTAL</small>
+                    <span id="ev-val" class="stat-val">0%</span>
+                </div>
+                <div class="stat-item gold">
+                    <small>P-VALUE</small>
+                    <span id="p-val" class="stat-val">1.0</span>
+                </div>
+            </div>
+            <div class="insight-box" id="insight-container">
+                <div id="verdict" style="font-weight: bold; color: var(--gold); margin-bottom: 5px;"></div>
+                <div id="advice" class="insight-msg">Esperando datos...</div>
+            </div>
+        </div>
+    </aside>
 
-    <div id="mainUI" style="display:none;">
-        <div class="insight-box">
-            <h3>&#10024; Insights de Estrategia</h3>
-            <div id="insight-list"></div>
+    <main class="glass-card" id="mainDashboard" style="display:none;">
+        <div style="height: 300px; margin-bottom: 30px;">
+            <canvas id="equityChart"></canvas>
         </div>
 
-        <div class="filters-bar">
-            <div class="filter-group"><label>Liga</label><select id="f-league" onchange="run()"></select></div>
-            <div class="filter-group"><label>Cuota Min</label><input type="number" id="f-min" value="1.0" step="0.1" oninput="run()"></div>
-            <div class="filter-group"><label>Cuota Max</label><input type="number" id="f-max" value="10.0" step="0.1" oninput="run()"></div>
-            <div class="filter-group"><label>Resultado</label><select id="f-res" onchange="run()"><option value="all">Todos</option><option value="winning">Win</option><option value="losing">Loss</option></select></div>
+        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <div class="stat-item"><small>MAX DRAWDOWN</small><span id="dd-val" style="color:var(--loss)">-0u</span></div>
+            <div class="stat-item"><small>EXPECTED WINRATE</small><span id="ewr-val">0%</span></div>
+            <div class="stat-item"><small>Z-SCORE</small><span id="z-val">0.0</span></div>
+            <div class="stat-item"><small>YIELD</small><span id="yield-val">0%</span></div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card"><small>YIELD</small><span id="s-yield">0%</span></div>
-            <div class="stat-card"><small>P-VALUE</small><span id="s-p">0.00</span></div>
-            <div class="stat-card"><small>PROFIT</small><span id="s-profit">0u</span></div>
-            <div class="stat-card"><small>WIN RATE</small><span id="s-wr">0%</span></div>
-        </div>
-
-        <div class="chart-box"><canvas id="chartEquity"></canvas></div>
-
-        <div class="table-wrapper">
-            <table>
+        <div class="table-container">
+            <table id="resultsTable">
                 <thead>
-                    <tr><th>Partido</th><th>Cuota</th><th>Res</th><th>Profit</th></tr>
+                    <tr>
+                        <th>FECHA</th><th>PARTIDO</th><th>LIGA</th><th>CUOTA</th><th>RES</th><th>PROFIT</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-    </div>
+    </main>
 </div>
 
 <script>
-let rawData = [];
-let charts = {};
+let chartInstance = null;
 
-function loadAndProcess() {
-    const input = document.getElementById('rawInput').value.trim();
-    if(!input) return;
+function analyzeHistory() {
+    const raw = document.getElementById('dataInput').value.trim();
+    if(!raw) return;
+
+    const rows = raw.split('\n');
+    let picks = [];
     
-    const rows = input.split('\n');
-    rawData = [];
-    const leagues = new Set();
-
-    rows.forEach(r => {
-        const c = r.split('\t');
+    rows.forEach(row => {
+        const c = row.split('\t');
         const odd = parseFloat(c[2]);
-        const res = c[36]?.trim().toLowerCase();
-        if(!isNaN(odd) && (res === 'winning' || res === 'losing')) {
-            rawData.push({
-                match: c[5], league: c[4]?.trim(), odd, res,
-                profit: res === 'winning' ? (odd - 1) : -1,
-                prob: 1/odd
+        const result = c[36]?.trim().toLowerCase();
+        if(!isNaN(odd) && (result === 'winning' || result === 'losing')) {
+            picks.push({
+                date: c[3], match: c[5], league: c[4],
+                odd: odd, res: result,
+                profit: result === 'winning' ? (odd - 1) : -1,
+                probImplied: 1/odd
             });
-            leagues.add(c[4]?.trim());
         }
     });
 
-    const sel = document.getElementById('f-league');
-    sel.innerHTML = '<option value="all">Todas las Ligas</option>';
-    Array.from(leagues).sort().forEach(l => sel.innerHTML += `<option value="${l}">${l}</option>`);
-
-    document.getElementById('mainUI').style.display = 'block';
-    run();
+    if(picks.length === 0) { alert("Formato inválido. Asegúrate de copiar desde la columna 'Name' hasta 'Overall ROI'."); return; }
+    
+    processEliteStats(picks);
 }
 
-function run() {
-    const lFilter = document.getElementById('f-league').value;
-    const minO = parseFloat(document.getElementById('f-min').value);
-    const maxO = parseFloat(document.getElementById('f-max').value);
-    const rFilter = document.getElementById('f-res').value;
+function processEliteStats(picks) {
+    document.getElementById('quickStats').style.display = 'block';
+    document.getElementById('mainDashboard').style.display = 'block';
 
-    const data = rawData.filter(d => 
-        (lFilter === 'all' || d.league === lFilter) &&
-        (d.odd >= minO && d.odd <= maxO) &&
-        (rFilter === 'all' || d.res === rFilter)
-    );
+    const n = picks.length;
+    const wins = picks.filter(p => p.res === 'winning').length;
+    const netProfit = picks.reduce((a, b) => a + b.profit, 0);
+    const yieldPct = (netProfit / n) * 100;
+    
+    // Cálculo de Esperanza Matemática vs Realidad
+    const expectedWins = picks.reduce((a, b) => a + b.probImplied, 0);
+    const variance = picks.reduce((a, b) => a + (b.probImplied * (1 - b.probImplied)), 0);
+    const zScore = (wins - expectedWins) / Math.sqrt(variance);
+    const pValue = 1 - 0.5 * (1 + erf(zScore / Math.sqrt(2)));
 
-    updateUI(data);
-}
+    // Max Drawdown & Equity
+    let cur = 0, peak = 0, mdd = 0, equity = [0];
+    picks.forEach(p => {
+        cur += p.profit;
+        equity.push(cur);
+        if(cur > peak) peak = cur;
+        if(peak - cur > mdd) mdd = peak - cur;
+    });
 
-function updateUI(data) {
-    const n = data.length;
-    if(n === 0) return;
+    // Actualizar UI
+    document.getElementById('ev-val').innerText = ((wins/n)*100).toFixed(1) + "%";
+    document.getElementById('p-val').innerText = pValue.toFixed(4);
+    document.getElementById('yield-val').innerText = yieldPct.toFixed(2) + "%";
+    document.getElementById('z-val').innerText = zScore.toFixed(2);
+    document.getElementById('dd-val').innerText = "-" + mdd.toFixed(2) + "u";
+    document.getElementById('ewr-val').innerText = ((expectedWins/n)*100).toFixed(1) + "%";
 
-    const wins = data.filter(x => x.res === 'winning').length;
-    const profit = data.reduce((a, b) => a + b.profit, 0);
-    const yieldPct = (profit / n) * 100;
-    const wr = (wins / n) * 100;
+    // Veredicto del Sistema
+    const verdict = document.getElementById('verdict');
+    const advice = document.getElementById('advice');
+    
+    if(pValue < 0.01) {
+        verdict.innerText = "SISTEMA ELITE";
+        advice.innerText = "La probabilidad de que esto sea suerte es menor al 1%. Tienes una ventaja matemática real sobre la casa.";
+    } else if(pValue < 0.05) {
+        verdict.innerText = "VENTAJA CONFIRMADA";
+        advice.innerText = "Resultados sólidos. El modelo de Poisson está capturando ineficiencias en el mercado.";
+    } else {
+        verdict.innerText = "VARIANZA ALTA";
+        advice.innerText = "Cuidado: Tu éxito podría ser suerte estadística. Necesitas al menos 100 picks más para confirmar el Edge.";
+    }
 
-    // P-Value
-    const expWins = data.reduce((a, b) => a + b.prob, 0);
-    const vari = data.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
-    const z = (wins - expWins) / Math.sqrt(vari);
-    const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
-
-    document.getElementById('s-yield').innerText = yieldPct.toFixed(1) + '%';
-    document.getElementById('s-p').innerText = pValue.toFixed(4);
-    document.getElementById('s-profit').innerText = profit.toFixed(2) + 'u';
-    document.getElementById('s-wr').innerText = wr.toFixed(1) + '%';
-
-    generateInsights(data, pValue, yieldPct, n);
-    renderChart(data);
-
-    document.getElementById('tableBody').innerHTML = data.slice(-10).reverse().map(x => `
-        <tr><td>${x.match}</td><td>${x.odd}</td><td class="${x.res}">${x.res.toUpperCase()}</td><td class="${x.profit>0?'win':'loss'}">${x.profit.toFixed(2)}</td></tr>
+    renderChart(equity);
+    
+    // Tabla
+    document.getElementById('tableBody').innerHTML = picks.slice(-10).reverse().map(p => `
+        <tr>
+            <td>${p.date}</td><td>${p.match}</td><td>${p.league}</td>
+            <td>@${p.odd.toFixed(2)}</td>
+            <td class="${p.res}">${p.res.toUpperCase()}</td>
+            <td class="${p.profit > 0 ? 'winning' : 'losing'}">${p.profit.toFixed(2)}u</td>
+        </tr>
     `).join('');
 }
 
-function generateInsights(data, p, y, n) {
-    const list = document.getElementById('insight-list');
-    let html = "";
-
-    // Insight 1: Confianza
-    if(p < 0.05) html += `<div class="insight-item"><b>Sistema Robusto:</b> Tu p-value es ${p.toFixed(4)}. Hay menos de 5% de probabilidad de que sea suerte.</div>`;
-    else html += `<div class="insight-item"><b>Alerta de Varianza:</b> Los resultados actuales no son estadísticamente sólidos. Podría ser una racha temporal.</div>`;
-
-    // Insight 2: Cuotas
-    const avgOdd = data.reduce((a,b)=>a+b.odd,0)/n;
-    html += `<div class="insight-item"><b>Cuota Promedio:</b> Estás operando en @${avgOdd.toFixed(2)}. Tu Win Rate necesario es ${(100/avgOdd).toFixed(1)}%.</div>`;
-
-    // Insight 3: Ligas Peligrosas
-    const lMap = {};
-    data.forEach(x => { lMap[x.league] = (lMap[x.league] || 0) + x.profit; });
-    const worstL = Object.entries(lMap).sort((a,b)=>a[1]-b[1])[0];
-    if(worstL && worstL[1] < 0) html += `<div class="insight-item"><b>Fuga de Profit:</b> Estás perdiendo ${Math.abs(worstL[1]).toFixed(2)}u en la liga <b>${worstL[0]}</b>.</div>`;
-
-    list.innerHTML = html;
-}
-
 function renderChart(data) {
-    if(charts.e) charts.e.destroy();
-    let cur = 0;
-    const equity = data.map(x => cur += x.profit);
-    charts.e = new Chart(document.getElementById('chartEquity'), {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
+    
+    chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.map((_,i)=>i+1),
-            datasets: [{ label: 'Profit', data: equity, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', fill: true, pointRadius: 0 }]
+            labels: data.map((_, i) => i),
+            datasets: [{
+                label: 'Profit Acumulado',
+                data: data,
+                borderColor: '#00f2ff',
+                backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.2
+            }]
         },
-        options: { maintainAspectRatio: false, scales: { x: { display: false } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
+                x: { display: false }
+            },
+            plugins: { legend: { display: false } }
+        }
     });
 }
 
@@ -220,5 +227,6 @@ function erf(x) {
     return sign * y;
 }
 </script>
+
 </body>
 </html>
