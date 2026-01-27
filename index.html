@@ -3,190 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Quant - Value Betting Terminal</title>
+    <title>Poisson Kelly Simulator - Quant Suite</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #05070a; --panel: #0f172a; --accent: #38bdf8; --win: #10b981; --loss: #f43f5e; --text: #f1f5f9; }
-        body { font-family: 'SF Mono', 'Fira Code', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        :root { --bg: #020617; --panel: #0f172a; --accent: #22d3ee; --win: #10b981; --loss: #ef4444; --gold: #fbbf24; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #f1f5f9; margin: 0; padding: 15px; }
         .container { max-width: 1200px; margin: auto; }
+        .glass-panel { background: var(--panel); border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         
-        .header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .glass { background: var(--panel); border: 1px solid #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        
-        textarea { width: 100%; height: 60px; background: #000; border: 1px solid #334155; border-radius: 4px; color: var(--accent); padding: 10px; font-size: 11px; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 4px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        textarea { width: 100%; height: 60px; background: #000; border: 1px solid #334155; border-radius: 6px; color: var(--accent); padding: 10px; font-family: monospace; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Quant Stats */
-        .quant-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .quant-card { background: #161e2e; padding: 15px; border-radius: 4px; border-left: 4px solid var(--accent); }
-        .quant-card small { color: #64748b; font-size: 0.7rem; text-transform: uppercase; }
-        .quant-card div { font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .kpi-card { background: #1e293b; padding: 15px; border-radius: 8px; border-top: 3px solid var(--accent); text-align: center; }
+        .kpi-card small { color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; }
+        .kpi-card div { font-size: 1.4rem; font-weight: 800; margin-top: 5px; }
 
-        /* Recommendation Box */
-        .value-box { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--win); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .value-box h3 { margin: 0 0 10px 0; color: var(--win); font-size: 1rem; }
-
-        .chart-container { height: 350px; background: var(--panel); border-radius: 8px; padding: 15px; border: 1px solid #1e293b; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 20px; }
-        th { text-align: left; color: var(--accent); border-bottom: 1px solid #334155; padding: 10px; }
-        td { padding: 8px 10px; border-bottom: 1px solid #1e293b; }
-        .win-t { color: var(--win); }
-        .loss-t { color: var(--loss); }
+        .chart-box { height: 400px; background: var(--panel); border-radius: 12px; padding: 15px; border: 1px solid #1e293b; }
+        .alert-info { background: rgba(34, 211, 238, 0.1); border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 20px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1 style="margin:0;">QUANT <span style="color:var(--accent)">POISSON</span> v5.0</h1>
-        <div id="status">STATUS: MODEL VALIDATION</div>
+    <div class="glass-panel" style="text-align:center">
+        <h1 style="margin:0">KELLY <span style="color:var(--accent)">SIMULATOR</span> PRO</h1>
+        <small>Backtesting de Gestión de Banca Avanzada</small>
     </div>
 
-    <div class="glass">
-        <textarea id="rawInput" placeholder="Pega tu historial aquí..."></textarea>
-        <button class="btn" onclick="quantAnalysis()">EJECUTAR ANÁLISIS DE VALOR (KELLY)</button>
+    <div class="glass-panel">
+        <textarea id="rawInput" placeholder="Pega tu historial aquí (mínimo 100 partidos)..."></textarea>
+        <button class="btn" onclick="runKellySimulation()">Simular con Kelly (Fraccional 1/4)</button>
     </div>
 
-    <div id="results" style="display:none;">
-        <div class="value-box" id="kelly-advice">
-            <h3>&#128200; Plan de Gestión de Banca</h3>
-            <div id="kelly-msg"></div>
+    <div id="resultsUI" style="display:none;">
+        <div class="alert-info" id="simulationMsg"></div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><small>Banca Final (Kelly)</small><div id="k-bank">0u</div></div>
+            <div class="kpi-card"><small>Banca Final (Plano)</small><div id="f-bank">0u</div></div>
+            <div class="kpi-card"><small>Edge Calibrado</small><div id="k-edge">0%</div></div>
+            <div class="kpi-card"><small>Max Drawdown</small><div id="k-dd" style="color:var(--loss)">0%</div></div>
         </div>
 
-        <div class="quant-grid">
-            <div class="quant-card"><small>Edge Estimado</small><div id="q-edge">0%</div></div>
-            <div class="quant-card"><small>Eficacia del Modelo</small><div id="q-eff">0%</div></div>
-            <div class="quant-card"><small>Brier Score</small><div id="q-brier">0.000</div></div>
-            <div class="quant-card"><small>Profit (1u)</small><div id="q-profit">0u</div></div>
-        </div>
-
-        <div class="chart-container"><canvas id="equityChart"></canvas></div>
-
-        <table>
-            <thead>
-                <tr><th>Liga</th><th>Picks</th><th>Profit</th><th>Yield</th><th>Calidad de Cuota</th></tr>
-            </thead>
-            <tbody id="leagueTable"></tbody>
-        </table>
+        <div class="chart-box"><canvas id="kellyChart"></canvas></div>
     </div>
 </div>
 
 <script>
-let mainChart = null;
+let simulationChart = null;
 
-function quantAnalysis() {
+function runKellySimulation() {
     const raw = document.getElementById('rawInput').value.trim();
-    if(!raw) return;
-
     const rows = raw.split('\n');
     let db = [];
+
     rows.forEach(r => {
         const c = r.split('\t').map(s => s.trim());
-        let odd, res, league;
+        let odd, res;
+        // Soporte multi-formato
         if (c[36] && (c[36].toLowerCase().includes('win') || c[36].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[36].toLowerCase(); league = c[4];
+            odd = parseFloat(c[2]); res = c[36].toLowerCase();
         } else if (c[29] && (c[29].toLowerCase().includes('win') || c[29].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[29].toLowerCase(); league = c[4];
+            odd = parseFloat(c[2]); res = c[29].toLowerCase();
         }
-        if(!isNaN(odd) && res) {
-            db.push({ league, odd, res, profit: res === 'winning' ? (odd-1) : -1, probImplied: 1/odd });
-        }
+        if(!isNaN(odd) && res) db.push({ odd, res, probImplied: 1/odd });
     });
 
-    if(db.length === 0) return alert("Datos no detectados.");
-    renderQuant(db);
+    if(db.length < 100) return alert("Para que el Kelly sea certero, necesito al menos los primeros 100 partidos para calibrar tu ventaja real.");
+
+    simulate(db);
 }
 
-function renderQuant(db) {
-    document.getElementById('results').style.display = 'block';
-    const n = db.length;
-    const wins = db.filter(x => x.res === 'winning').length;
-    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
-    const avgOdd = db.reduce((a, b) => a + b.odd, 0) / n;
+function simulate(db) {
+    document.getElementById('resultsUI').style.display = 'block';
     
-    // 1. Cálculo de Brier Score (Mide qué tan cerca está tu modelo de la realidad)
-    // Un Brier Score más bajo = Predicciones más precisas
-    const brier = db.reduce((a, b) => {
-        const outcome = b.res === 'winning' ? 1 : 0;
-        return a + Math.pow(b.probImplied - outcome, 2);
-    }, 0) / n;
+    // 1. CALIBRACIÓN: Usamos los primeros 100 para determinar el EDGE
+    const trainingSet = db.slice(0, 100);
+    const trainingWins = trainingSet.filter(x => x.res === 'winning').length;
+    const trainingWR = trainingWins / 100;
+    const avgOdd = trainingSet.reduce((a,b) => a + b.odd, 0) / 100;
+    
+    // Edge = (WR * Cuota) - 1
+    const calibratedEdge = (trainingWR * avgOdd) - 1;
+    
+    // 2. SIMULACIÓN: Del partido 101 en adelante
+    let bankKelly = 1000; // Banca inicial 1000 unidades
+    let bankFlat = 1000;
+    const flatStake = 10; // Stake plano fijo de 10 unidades (1% de la banca inicial)
+    
+    let historyKelly = [1000];
+    let historyFlat = [1000];
+    let peakKelly = 1000;
+    let maxDD = 0;
 
-    // 2. Cálculo del Edge Real (Ventaja sobre la casa)
-    const realWinRate = wins / n;
-    const expectedWinRate = db.reduce((a, b) => a + b.probImplied, 0) / n;
-    const edge = realWinRate - expectedWinRate;
+    const testSet = db.slice(100);
 
-    // 3. Sugerencia Criterio de Kelly (Fraccional 1/4 para mitigar varianza)
-    // Formula: (bp - q) / b  donde b es cuota-1, p prob éxito, q prob fallo
-    const k_p = realWinRate;
-    const k_q = 1 - k_p;
-    const k_b = avgOdd - 1;
-    const kellyFull = ((k_b * k_p) - k_q) / k_b;
-    const kellySafe = (kellyFull / 4) * 100; // Kelly al 25%
+    testSet.forEach(p => {
+        const isWin = p.res === 'winning';
+        
+        // Calcular Stake Kelly Fraccional (1/4 de Kelly para seguridad)
+        // Kelly % = Edge / (Cuota - 1)
+        let kellyPct = calibratedEdge > 0 ? (calibratedEdge / (p.odd - 1)) : 0;
+        let fractionatedKelly = (kellyPct / 4); // Cuarto de Kelly
+        
+        // Limitar stake máximo al 5% de la banca actual para evitar ruina por varianza
+        if(fractionatedKelly > 0.05) fractionatedKelly = 0.05;
+        if(fractionatedKelly < 0) fractionatedKelly = 0;
 
-    // Update UI
-    document.getElementById('q-edge').innerText = (edge * 100).toFixed(2) + "%";
-    document.getElementById('q-eff').innerText = ((realWinRate / expectedWinRate) * 100).toFixed(1) + "%";
-    document.getElementById('q-brier').innerText = brier.toFixed(3);
-    document.getElementById('q-profit').innerText = totalProfit.toFixed(2) + "u";
+        const stakeK = bankKelly * fractionatedKelly;
+        
+        // Actualizar Bancas
+        if(isWin) {
+            bankKelly += (stakeK * (p.odd - 1));
+            bankFlat += (flatStake * (p.odd - 1));
+        } else {
+            bankKelly -= stakeK;
+            bankFlat -= flatStake;
+        }
 
-    const msg = document.getElementById('kelly-msg');
-    if(edge > 0) {
-        msg.innerHTML = `Tu modelo tiene un <b>Edge del ${(edge*100).toFixed(2)}%</b>. <br> 
-        Para batir a la casa minimizando el riesgo de quiebra, utiliza un <b>Stake de ${(kellySafe).toFixed(2)}%</b> de tu banca total por apuesta. 
-        Este valor es matemáticamente superior al Stake Plano.`;
-    } else {
-        msg.innerHTML = `Tu modelo actualmente tiene un Edge negativo. <br>
-        <b>Acción inmediata:</b> No subas el stake. Revisa si las cuotas que eliges son demasiado bajas o si el Brier Score es alto (>0.25).`;
-    }
+        historyKelly.push(bankKelly);
+        historyFlat.push(bankFlat);
 
-    renderChart(db);
-    renderLeagueTable(db);
+        // Drawdown
+        if(bankKelly > peakKelly) peakKelly = bankKelly;
+        let dd = (peakKelly - bankKelly) / peakKelly;
+        if(dd > maxDD) maxDD = dd;
+    });
+
+    // UI
+    document.getElementById('k-bank').innerText = bankKelly.toFixed(1) + "u";
+    document.getElementById('f-bank').innerText = bankFlat.toFixed(1) + "u";
+    document.getElementById('k-edge').innerText = (calibratedEdge * 100).toFixed(2) + "%";
+    document.getElementById('k-dd').innerText = (maxDD * 100).toFixed(1) + "%";
+
+    const msg = document.getElementById('simulationMsg');
+    msg.innerHTML = `<b>Informe de Calibración:</b> Tras analizar los primeros 100 picks, tu modelo de Poisson tiene un <b>Edge de ${(calibratedEdge*100).toFixed(2)}%</b>. 
+    Se ha simulado el resto de los partidos usando un <b>Cuarto de Kelly (max 5%)</b> para optimizar el crecimiento logarítmico.`;
+
+    renderChart(historyKelly, historyFlat);
 }
 
-function renderChart(db) {
-    if(mainChart) mainChart.destroy();
-    let cur = 0;
-    const ctx = document.getElementById('equityChart').getContext('2d');
-    mainChart = new Chart(ctx, {
+function renderChart(kData, fData) {
+    const ctx = document.getElementById('kellyChart').getContext('2d');
+    if(simulationChart) simulationChart.destroy();
+    
+    simulationChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: db.map((_, i) => i),
-            datasets: [{
-                label: 'Profit Acumulado (1u)',
-                data: db.map(x => cur += x.profit),
-                borderColor: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.05)',
-                fill: true,
-                pointRadius: 0,
-                tension: 0.2
-            }]
+            labels: kData.map((_, i) => i),
+            datasets: [
+                {
+                    label: 'Gestión Kelly (Dinámica)',
+                    data: kData,
+                    borderColor: '#22d3ee',
+                    backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                    fill: true, tension: 0.3, pointRadius: 0
+                },
+                {
+                    label: 'Stake Plano (10u)',
+                    data: fData,
+                    borderColor: '#94a3b8',
+                    borderDash: [5, 5],
+                    fill: false, tension: 0.3, pointRadius: 0
+                }
+            ]
         },
-        options: { maintainAspectRatio: false, scales: { x: { display: false } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#fff' } } },
+            scales: {
+                y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                x: { display: false }
+            }
+        }
     });
-}
-
-function renderLeagueTable(db) {
-    const leagues = {};
-    db.forEach(x => {
-        if(!leagues[x.league]) leagues[x.league] = { n:0, p:0, win:0, sumOdds:0 };
-        leagues[x.league].n++;
-        leagues[x.league].p += x.profit;
-        leagues[x.league].win += (x.res === 'winning' ? 1 : 0);
-        leagues[x.league].sumOdds += x.odd;
-    });
-
-    const html = Object.entries(leagues).sort((a,b) => b[1].p - a[1].p).map(([name, s]) => `
-        <tr>
-            <td>${name}</td>
-            <td>${s.n}</td>
-            <td class="${s.p >= 0 ? 'win-t' : 'loss-t'}">${s.p.toFixed(2)}u</td>
-            <td>${((s.p/s.n)*100).toFixed(1)}%</td>
-            <td>@${(s.sumOdds/s.n).toFixed(2)}</td>
-        </tr>
-    `).join('');
-    document.getElementById('leagueTable').innerHTML = html;
 }
 </script>
 </body>
