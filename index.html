@@ -3,185 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Intelligence - Backtesting Pro</title>
+    <title>Poisson Quant - Value Betting Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0a0f1e; --panel: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        :root { --bg: #05070a; --panel: #0f172a; --accent: #38bdf8; --win: #10b981; --loss: #f43f5e; --text: #f1f5f9; }
+        body { font-family: 'SF Mono', 'Fira Code', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1200px; margin: auto; }
         
-        .glass { background: var(--panel); border: 1px solid #2d3748; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
-        textarea { width: 100%; height: 60px; background: #050811; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); padding: 10px; font-family: monospace; font-size: 11px; }
-        .btn { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-
-        .backtest-header { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .backtest-card { padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        .flat { border-top: 4px solid var(--accent); }
-        .dynamic { border-top: 4px solid var(--gold); background: rgba(255, 215, 0, 0.05); }
-
-        .val { font-size: 1.8rem; font-weight: 900; display: block; margin: 5px 0; }
-        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 400px; border: 1px solid #2d3748; }
+        .header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .glass { background: var(--panel); border: 1px solid #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         
-        .comparison-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
-        .trend-up { color: var(--win); }
-        .trend-down { color: var(--loss); }
+        textarea { width: 100%; height: 60px; background: #000; border: 1px solid #334155; border-radius: 4px; color: var(--accent); padding: 10px; font-size: 11px; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 4px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+
+        /* Quant Stats */
+        .quant-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .quant-card { background: #161e2e; padding: 15px; border-radius: 4px; border-left: 4px solid var(--accent); }
+        .quant-card small { color: #64748b; font-size: 0.7rem; text-transform: uppercase; }
+        .quant-card div { font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
+
+        /* Recommendation Box */
+        .value-box { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--win); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .value-box h3 { margin: 0 0 10px 0; color: var(--win); font-size: 1rem; }
+
+        .chart-container { height: 350px; background: var(--panel); border-radius: 8px; padding: 15px; border: 1px solid #1e293b; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 20px; }
+        th { text-align: left; color: var(--accent); border-bottom: 1px solid #334155; padding: 10px; }
+        td { padding: 8px 10px; border-bottom: 1px solid #1e293b; }
+        .win-t { color: var(--win); }
+        .loss-t { color: var(--loss); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="glass" style="text-align: center;">
-        <h1 style="margin:0; color:var(--accent);">SIMULADOR DE <span style="color:#fff">BACKTESTING</span></h1>
-        <small>Comparativa: Stake Plano vs. Algoritmo Dinámico</small>
+    <div class="header">
+        <h1 style="margin:0;">QUANT <span style="color:var(--accent)">POISSON</span> v5.0</h1>
+        <div id="status">STATUS: MODEL VALIDATION</div>
     </div>
 
     <div class="glass">
         <textarea id="rawInput" placeholder="Pega tu historial aquí..."></textarea>
-        <button class="btn" onclick="runBacktest()">EJECUTAR SIMULACIÓN COMPARATIVA</button>
+        <button class="btn" onclick="quantAnalysis()">EJECUTAR ANÁLISIS DE VALOR (KELLY)</button>
     </div>
 
-    <div id="resultsUI" style="display:none;">
-        <div class="backtest-header">
-            <div class="backtest-card flat">
-                <div class="comparison-label">Profit (Stake Plano)</div>
-                <span class="val" id="flat-profit">0.00u</span>
-                <small id="flat-yield">0% Yield</small>
-            </div>
-            <div class="backtest-card dynamic">
-                <div class="comparison-label">Profit (Stake Dinámico)</div>
-                <span class="val" id="dyn-profit" style="color: var(--gold);">0.00u</span>
-                <small id="dyn-yield">0% Yield</small>
-            </div>
+    <div id="results" style="display:none;">
+        <div class="value-box" id="kelly-advice">
+            <h3>&#128200; Plan de Gestión de Banca</h3>
+            <div id="kelly-msg"></div>
         </div>
 
-        <div class="glass" id="verdict-box" style="text-align: center; font-weight: bold; font-size: 1.1rem;"></div>
-
-        <div class="chart-box">
-            <canvas id="compChart"></canvas>
+        <div class="quant-grid">
+            <div class="quant-card"><small>Edge Estimado</small><div id="q-edge">0%</div></div>
+            <div class="quant-card"><small>Eficacia del Modelo</small><div id="q-eff">0%</div></div>
+            <div class="quant-card"><small>Brier Score</small><div id="q-brier">0.000</div></div>
+            <div class="quant-card"><small>Profit (1u)</small><div id="q-profit">0u</div></div>
         </div>
+
+        <div class="chart-container"><canvas id="equityChart"></canvas></div>
+
+        <table>
+            <thead>
+                <tr><th>Liga</th><th>Picks</th><th>Profit</th><th>Yield</th><th>Calidad de Cuota</th></tr>
+            </thead>
+            <tbody id="leagueTable"></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-let compChart = null;
+let mainChart = null;
 
-function runBacktest() {
-    const input = document.getElementById('rawInput').value.trim();
-    if(!input) return;
+function quantAnalysis() {
+    const raw = document.getElementById('rawInput').value.trim();
+    if(!raw) return;
 
-    const rows = input.split('\n');
-    let picks = [];
+    const rows = raw.split('\n');
+    let db = [];
     rows.forEach(r => {
         const c = r.split('\t').map(s => s.trim());
-        let odd, res;
+        let odd, res, league;
         if (c[36] && (c[36].toLowerCase().includes('win') || c[36].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[36].toLowerCase();
+            odd = parseFloat(c[2]); res = c[36].toLowerCase(); league = c[4];
         } else if (c[29] && (c[29].toLowerCase().includes('win') || c[29].toLowerCase().includes('los'))) {
-            odd = parseFloat(c[2]); res = c[29].toLowerCase();
+            odd = parseFloat(c[2]); res = c[29].toLowerCase(); league = c[4];
         }
-        if(!isNaN(odd) && res) picks.push({ odd, res });
+        if(!isNaN(odd) && res) {
+            db.push({ league, odd, res, profit: res === 'winning' ? (odd-1) : -1, probImplied: 1/odd });
+        }
     });
 
-    if(picks.length < 15) return alert("Necesitas al menos 15 picks para un backtest fiable.");
-
-    simulate(picks);
+    if(db.length === 0) return alert("Datos no detectados.");
+    renderQuant(db);
 }
 
-function simulate(picks) {
-    document.getElementById('resultsUI').style.display = 'block';
-
-    let flatHistory = [0];
-    let dynHistory = [0];
-    let flatProfit = 0;
-    let dynProfit = 0;
-    let totalStakedDyn = 0;
-
-    for(let i = 0; i < picks.length; i++) {
-        const p = picks[i];
-        const isWin = p.res === 'winning';
-        
-        // 1. Lógica Stake Plano
-        const flatGain = isWin ? (p.odd - 1) : -1;
-        flatProfit += flatGain;
-        flatHistory.push(Number(flatProfit.toFixed(2)));
-
-        // 2. Lógica Stake Dinámico (Mira los 10 anteriores)
-        let currentStake = 1.0;
-        if(i >= 10) {
-            const window = picks.slice(i-10, i);
-            const windowProfit = window.reduce((a, b) => a + (b.res === 'winning' ? (b.odd-1) : -1), 0);
-            // Algoritmo: Stake = 1 + (ProfitL10 / 10). Min 0.5, Max 2.5
-            currentStake = Math.max(0.5, Math.min(2.5, 1 + (windowProfit / 10)));
-        }
-
-        const dynGain = isWin ? (currentStake * (p.odd - 1)) : -currentStake;
-        dynProfit += dynGain;
-        totalStakedDyn += currentStake;
-        dynHistory.push(Number(dynProfit.toFixed(2)));
-    }
-
-    // Actualizar UI
-    document.getElementById('flat-profit').innerText = flatProfit.toFixed(2) + "u";
-    document.getElementById('dyn-profit').innerText = dynProfit.toFixed(2) + "u";
+function renderQuant(db) {
+    document.getElementById('results').style.display = 'block';
+    const n = db.length;
+    const wins = db.filter(x => x.res === 'winning').length;
+    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
+    const avgOdd = db.reduce((a, b) => a + b.odd, 0) / n;
     
-    const flatY = (flatProfit / picks.length) * 100;
-    const dynY = (dynProfit / totalStakedDyn) * 100;
-    
-    document.getElementById('flat-yield').innerText = flatY.toFixed(2) + "% Yield";
-    document.getElementById('dyn-yield').innerText = dynY.toFixed(2) + "% Yield";
+    // 1. Cálculo de Brier Score (Mide qué tan cerca está tu modelo de la realidad)
+    // Un Brier Score más bajo = Predicciones más precisas
+    const brier = db.reduce((a, b) => {
+        const outcome = b.res === 'winning' ? 1 : 0;
+        return a + Math.pow(b.probImplied - outcome, 2);
+    }, 0) / n;
 
-    const verdict = document.getElementById('verdict-box');
-    if(dynProfit > flatProfit) {
-        verdict.innerHTML = `<span class="trend-up">¡EL ALGORITMO GANA!</span> Habrías ganado ${(dynProfit - flatProfit).toFixed(2)}u más con Stake Dinámico.`;
-        verdict.style.borderColor = "var(--win)";
+    // 2. Cálculo del Edge Real (Ventaja sobre la casa)
+    const realWinRate = wins / n;
+    const expectedWinRate = db.reduce((a, b) => a + b.probImplied, 0) / n;
+    const edge = realWinRate - expectedWinRate;
+
+    // 3. Sugerencia Criterio de Kelly (Fraccional 1/4 para mitigar varianza)
+    // Formula: (bp - q) / b  donde b es cuota-1, p prob éxito, q prob fallo
+    const k_p = realWinRate;
+    const k_q = 1 - k_p;
+    const k_b = avgOdd - 1;
+    const kellyFull = ((k_b * k_p) - k_q) / k_b;
+    const kellySafe = (kellyFull / 4) * 100; // Kelly al 25%
+
+    // Update UI
+    document.getElementById('q-edge').innerText = (edge * 100).toFixed(2) + "%";
+    document.getElementById('q-eff').innerText = ((realWinRate / expectedWinRate) * 100).toFixed(1) + "%";
+    document.getElementById('q-brier').innerText = brier.toFixed(3);
+    document.getElementById('q-profit').innerText = totalProfit.toFixed(2) + "u";
+
+    const msg = document.getElementById('kelly-msg');
+    if(edge > 0) {
+        msg.innerHTML = `Tu modelo tiene un <b>Edge del ${(edge*100).toFixed(2)}%</b>. <br> 
+        Para batir a la casa minimizando el riesgo de quiebra, utiliza un <b>Stake de ${(kellySafe).toFixed(2)}%</b> de tu banca total por apuesta. 
+        Este valor es matemáticamente superior al Stake Plano.`;
     } else {
-        verdict.innerHTML = `<span class="trend-down">STAKE PLANO ES MEJOR.</span> En este historial, la varianza no justificó el cambio de stake.`;
-        verdict.style.borderColor = "var(--loss)";
+        msg.innerHTML = `Tu modelo actualmente tiene un Edge negativo. <br>
+        <b>Acción inmediata:</b> No subas el stake. Revisa si las cuotas que eliges son demasiado bajas o si el Brier Score es alto (>0.25).`;
     }
 
-    renderChart(flatHistory, dynHistory);
+    renderChart(db);
+    renderLeagueTable(db);
 }
 
-function renderChart(flat, dyn) {
-    const ctx = document.getElementById('compChart').getContext('2d');
-    if(compChart) compChart.destroy();
-    
-    compChart = new Chart(ctx, {
+function renderChart(db) {
+    if(mainChart) mainChart.destroy();
+    let cur = 0;
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    mainChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: flat.map((_, i) => i),
-            datasets: [
-                {
-                    label: 'Stake Plano (1u)',
-                    data: flat,
-                    borderColor: '#00f2ff',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.2
-                },
-                {
-                    label: 'Algoritmo Dinámico',
-                    data: dyn,
-                    borderColor: '#ffd700',
-                    borderWidth: 3,
-                    pointRadius: 0,
-                    tension: 0.2
-                }
-            ]
+            labels: db.map((_, i) => i),
+            datasets: [{
+                label: 'Profit Acumulado (1u)',
+                data: db.map(x => cur += x.profit),
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.05)',
+                fill: true,
+                pointRadius: 0,
+                tension: 0.2
+            }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#fff', font: { size: 12 } } }
-            },
-            scales: {
-                y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
-                x: { display: false }
-            }
-        }
+        options: { maintainAspectRatio: false, scales: { x: { display: false } } }
     });
+}
+
+function renderLeagueTable(db) {
+    const leagues = {};
+    db.forEach(x => {
+        if(!leagues[x.league]) leagues[x.league] = { n:0, p:0, win:0, sumOdds:0 };
+        leagues[x.league].n++;
+        leagues[x.league].p += x.profit;
+        leagues[x.league].win += (x.res === 'winning' ? 1 : 0);
+        leagues[x.league].sumOdds += x.odd;
+    });
+
+    const html = Object.entries(leagues).sort((a,b) => b[1].p - a[1].p).map(([name, s]) => `
+        <tr>
+            <td>${name}</td>
+            <td>${s.n}</td>
+            <td class="${s.p >= 0 ? 'win-t' : 'loss-t'}">${s.p.toFixed(2)}u</td>
+            <td>${((s.p/s.n)*100).toFixed(1)}%</td>
+            <td>@${(s.sumOdds/s.n).toFixed(2)}</td>
+        </tr>
+    `).join('');
+    document.getElementById('leagueTable').innerHTML = html;
 }
 </script>
 </body>
