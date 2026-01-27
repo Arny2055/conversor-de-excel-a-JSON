@@ -3,218 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookie Slayer v3.0 - Poisson Intelligence</title>
+    <title>Poisson Intelligence - Omni-Format</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0a0f1e; --card: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 14px; }
+        :root { --bg: #0a0f1e; --panel: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; line-height: 1.4; }
         
-        /* Layout */
-        .grid-main { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 1200px; margin: auto; }
-        @media (min-width: 1024px) { .grid-main { grid-template-columns: 350px 1fr; } }
+        .container { max-width: 1200px; margin: auto; }
+        .header { text-align: center; padding: 15px 0; border-bottom: 1px solid #2d3748; margin-bottom: 15px; }
+        .header h1 { color: var(--accent); margin: 0; font-size: 1.6rem; letter-spacing: 1px; }
 
-        /* Componentes */
-        .glass-card { background: var(--card); border: 1px solid #2d3748; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-area { width: 100%; height: 120px; background: #050811; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); padding: 12px; font-family: 'Fira Code', monospace; font-size: 11px; margin-bottom: 10px; }
+        .input-box { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #2d3748; margin-bottom: 15px; }
+        textarea { width: 100%; height: 80px; background: #050811; border: 1px solid #475569; border-radius: 8px; color: var(--accent); padding: 10px; font-size: 11px; font-family: monospace; }
         
-        .btn-action { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-action:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--accent); }
+        .btn { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
 
-        /* Stats & Badges */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .stat-item { background: #1c2539; padding: 15px; border-radius: 12px; text-align: center; border-bottom: 3px solid #334155; }
-        .stat-item.gold { border-color: var(--gold); }
-        .stat-val { font-size: 1.4rem; font-weight: 900; display: block; color: var(--accent); }
+        /* Dashboard */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         
-        /* Insights Box */
-        .insight-box { background: rgba(0, 242, 255, 0.05); border-left: 4px solid var(--accent); padding: 15px; margin-top: 20px; }
-        .insight-msg { margin-bottom: 10px; font-style: italic; color: #cbd5e1; }
+        .stat-card { background: var(--panel); padding: 15px; border-radius: 10px; text-align: center; border-bottom: 3px solid #334155; }
+        .stat-card small { color: #94a3b8; font-size: 0.7rem; display: block; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-card span { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
 
-        .table-container { overflow-x: auto; margin-top: 20px; border-radius: 12px; }
-        table { width: 100%; border-collapse: collapse; background: var(--card); }
-        th { background: #1c2539; padding: 12px; text-align: left; color: var(--accent); font-size: 11px; }
-        td { padding: 12px; border-bottom: 1px solid #2d3748; font-size: 12px; }
+        .insight-card { background: rgba(0, 242, 255, 0.05); border-left: 4px solid var(--accent); padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem; }
         
-        .winning { color: var(--win); font-weight: bold; }
-        .losing { color: var(--loss); font-weight: bold; }
+        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 300px; margin-bottom: 15px; border: 1px solid #2d3748; }
+
+        .table-wrapper { overflow-x: auto; background: var(--panel); border-radius: 10px; border: 1px solid #2d3748; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 0.8rem; }
+        th { background: #1c2539; padding: 12px; text-align: left; color: var(--accent); }
+        td { padding: 10px; border-bottom: 1px solid #2d3748; }
         
-        /* Animación de carga */
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .loading { animation: pulse 1.5s infinite; }
+        .Winning { color: var(--win); font-weight: bold; }
+        .Losing { color: var(--loss); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="grid-main">
-    <aside class="glass-card">
-        <h2 style="color: var(--accent); margin-top: 0;">TERMINAL V3.0</h2>
-        <p style="font-size: 11px; color: #94a3b8;">SISTEMA DE ANÁLISIS DE VARIANZA CRÍTICA</p>
-        
-        <textarea id="dataInput" class="input-area" placeholder="Pega el historial completo..."></textarea>
-        <button class="btn-action" onclick="analyzeHistory()">Inyectar Datos</button>
+<div class="container">
+    <div class="header">
+        <h1>POISSON <span style="color:white">ELITE BI</span></h1>
+        <small style="color: #94a3b8;">Soporte Multi-Formato & Insights Predictivos</small>
+    </div>
 
-        <div id="quickStats" style="display:none;">
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <small>EV TOTAL</small>
-                    <span id="ev-val" class="stat-val">0%</span>
-                </div>
-                <div class="stat-item gold">
-                    <small>P-VALUE</small>
-                    <span id="p-val" class="stat-val">1.0</span>
-                </div>
-            </div>
-            <div class="insight-box" id="insight-container">
-                <div id="verdict" style="font-weight: bold; color: var(--gold); margin-bottom: 5px;"></div>
-                <div id="advice" class="insight-msg">Esperando datos...</div>
-            </div>
-        </div>
-    </aside>
+    <div class="input-box">
+        <textarea id="rawInput" placeholder="Pega aquí tu historial (detecta automáticamente ambos formatos)..."></textarea>
+        <button class="btn" onclick="processData()">Ejecutar Análisis Omni-Format</button>
+    </div>
 
-    <main class="glass-card" id="mainDashboard" style="display:none;">
-        <div style="height: 300px; margin-bottom: 30px;">
-            <canvas id="equityChart"></canvas>
+    <div id="dashboard" style="display:none;">
+        <div class="insight-card" id="ai-insight"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><small>Yield / ROI</small><span id="s-yield">0%</span></div>
+            <div class="stat-card" id="p-card"><small>P-Value</small><span id="s-p">0.00</span></div>
+            <div class="stat-card"><small>Edge Real</small><span id="s-edge">0%</span></div>
+            <div class="stat-card"><small>Max Drawdown</small><span id="s-dd" style="color: var(--loss)">0u</span></div>
         </div>
 
-        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
-            <div class="stat-item"><small>MAX DRAWDOWN</small><span id="dd-val" style="color:var(--loss)">-0u</span></div>
-            <div class="stat-item"><small>EXPECTED WINRATE</small><span id="ewr-val">0%</span></div>
-            <div class="stat-item"><small>Z-SCORE</small><span id="z-val">0.0</span></div>
-            <div class="stat-item"><small>YIELD</small><span id="yield-val">0%</span></div>
-        </div>
+        <div class="chart-box"><canvas id="equityChart"></canvas></div>
 
-        <div class="table-container">
-            <table id="resultsTable">
+        <div class="table-wrapper">
+            <table>
                 <thead>
-                    <tr>
-                        <th>FECHA</th><th>PARTIDO</th><th>LIGA</th><th>CUOTA</th><th>RES</th><th>PROFIT</th>
-                    </tr>
+                    <tr><th>Partido</th><th>Liga</th><th>Cuota</th><th>Resultado</th><th>Profit</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
-    </main>
+    </div>
 </div>
 
 <script>
-let chartInstance = null;
+let chart = null;
 
-function analyzeHistory() {
-    const raw = document.getElementById('dataInput').value.trim();
+function processData() {
+    const raw = document.getElementById('rawInput').value.trim();
     if(!raw) return;
 
     const rows = raw.split('\n');
     let picks = [];
-    
+
     rows.forEach(row => {
-        const c = row.split('\t');
-        const odd = parseFloat(c[2]);
-        const result = c[36]?.trim().toLowerCase();
-        if(!isNaN(odd) && (result === 'winning' || result === 'losing')) {
+        const c = row.split('\t').map(s => s.trim());
+        if (c.length < 10) return;
+
+        let odd, res, league, match;
+
+        // LÓGICA DE DETECCIÓN DE FORMATO (OMNI-DETECTOR)
+        // Buscamos la columna "Result" que suele contener "Winning" o "Losing"
+        // En formato 1 está en la 36. En formato 2 está en la 29.
+        
+        if (c[36] && (c[36].toLowerCase() === 'winning' || c[36].toLowerCase() === 'losing')) {
+            // Formato 1
+            odd = parseFloat(c[2]);
+            res = c[36];
+            league = c[4];
+            match = c[5];
+        } else if (c[29] && (c[29].toLowerCase() === 'winning' || c[29].toLowerCase() === 'losing')) {
+            // Formato 2
+            odd = parseFloat(c[2]);
+            res = c[29];
+            league = c[4];
+            match = c[5];
+        }
+
+        if(!isNaN(odd) && res) {
             picks.push({
-                date: c[3], match: c[5], league: c[4],
-                odd: odd, res: result,
-                profit: result === 'winning' ? (odd - 1) : -1,
-                probImplied: 1/odd
+                match, league, odd, res,
+                profit: res.toLowerCase() === 'winning' ? (odd - 1) : -1,
+                prob: 1/odd
             });
         }
     });
 
-    if(picks.length === 0) { alert("Formato inválido. Asegúrate de copiar desde la columna 'Name' hasta 'Overall ROI'."); return; }
-    
-    processEliteStats(picks);
+    if(picks.length === 0) return alert("No se detectaron datos válidos. Revisa el formato.");
+    render(picks);
 }
 
-function processEliteStats(picks) {
-    document.getElementById('quickStats').style.display = 'block';
-    document.getElementById('mainDashboard').style.display = 'block';
-
-    const n = picks.length;
-    const wins = picks.filter(p => p.res === 'winning').length;
-    const netProfit = picks.reduce((a, b) => a + b.profit, 0);
-    const yieldPct = (netProfit / n) * 100;
+function render(data) {
+    document.getElementById('dashboard').style.display = 'block';
+    const n = data.length;
+    const wins = data.filter(x => x.res.toLowerCase() === 'winning').length;
+    const profit = data.reduce((a, b) => a + b.profit, 0);
+    const yieldPct = (profit / n) * 100;
     
-    // Cálculo de Esperanza Matemática vs Realidad
-    const expectedWins = picks.reduce((a, b) => a + b.probImplied, 0);
-    const variance = picks.reduce((a, b) => a + (b.probImplied * (1 - b.probImplied)), 0);
-    const zScore = (wins - expectedWins) / Math.sqrt(variance);
-    const pValue = 1 - 0.5 * (1 + erf(zScore / Math.sqrt(2)));
+    // P-Value y Varianza
+    const expWins = data.reduce((a, b) => a + b.prob, 0);
+    const vari = data.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
+    const z = (wins - expWins) / Math.sqrt(vari);
+    const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
 
-    // Max Drawdown & Equity
-    let cur = 0, peak = 0, mdd = 0, equity = [0];
-    picks.forEach(p => {
-        cur += p.profit;
-        equity.push(cur);
+    // Drawdown
+    let cur = 0, peak = 0, mdd = 0, history = [0];
+    data.forEach(x => {
+        cur += x.profit;
+        history.push(cur);
         if(cur > peak) peak = cur;
         if(peak - cur > mdd) mdd = peak - cur;
     });
 
-    // Actualizar UI
-    document.getElementById('ev-val').innerText = ((wins/n)*100).toFixed(1) + "%";
-    document.getElementById('p-val').innerText = pValue.toFixed(4);
-    document.getElementById('yield-val').innerText = yieldPct.toFixed(2) + "%";
-    document.getElementById('z-val').innerText = zScore.toFixed(2);
-    document.getElementById('dd-val').innerText = "-" + mdd.toFixed(2) + "u";
-    document.getElementById('ewr-val').innerText = ((expectedWins/n)*100).toFixed(1) + "%";
-
-    // Veredicto del Sistema
-    const verdict = document.getElementById('verdict');
-    const advice = document.getElementById('advice');
+    // UI
+    document.getElementById('s-yield').innerText = yieldPct.toFixed(2) + '%';
+    document.getElementById('s-p').innerText = pValue.toFixed(4);
+    document.getElementById('s-dd').innerText = '-' + mdd.toFixed(2) + 'u';
+    document.getElementById('s-edge').innerText = ((wins/n - expWins/n)*100).toFixed(1) + '%';
     
-    if(pValue < 0.01) {
-        verdict.innerText = "SISTEMA ELITE";
-        advice.innerText = "La probabilidad de que esto sea suerte es menor al 1%. Tienes una ventaja matemática real sobre la casa.";
-    } else if(pValue < 0.05) {
-        verdict.innerText = "VENTAJA CONFIRMADA";
-        advice.innerText = "Resultados sólidos. El modelo de Poisson está capturando ineficiencias en el mercado.";
+    // Insights Inteligentes
+    const insight = document.getElementById('ai-insight');
+    if(pValue < 0.05) {
+        insight.innerHTML = `<b>&#128640; SISTEMA VALIDADO:</b> Tu ventaja no es casualidad. El modelo Poisson está batiendo la probabilidad implícita con alta confianza.`;
+        document.getElementById('p-card').style.borderColor = "var(--win)";
     } else {
-        verdict.innerText = "VARIANZA ALTA";
-        advice.innerText = "Cuidado: Tu éxito podría ser suerte estadística. Necesitas al menos 100 picks más para confirmar el Edge.";
+        insight.innerHTML = `<b>&#9888; PRECAUCIÓN:</b> P-Value alto (${pValue.toFixed(3)}). No hay pruebas suficientes de que tu beneficio sea por habilidad. Podría ser varianza positiva.`;
+        document.getElementById('p-card').style.borderColor = "var(--loss)";
     }
 
-    renderChart(equity);
-    
-    // Tabla
-    document.getElementById('tableBody').innerHTML = picks.slice(-10).reverse().map(p => `
-        <tr>
-            <td>${p.date}</td><td>${p.match}</td><td>${p.league}</td>
-            <td>@${p.odd.toFixed(2)}</td>
-            <td class="${p.res}">${p.res.toUpperCase()}</td>
-            <td class="${p.profit > 0 ? 'winning' : 'losing'}">${p.profit.toFixed(2)}u</td>
-        </tr>
-    `).join('');
-}
-
-function renderChart(data) {
-    const ctx = document.getElementById('equityChart').getContext('2d');
-    if(chartInstance) chartInstance.destroy();
-    
-    chartInstance = new Chart(ctx, {
+    // Chart
+    if(chart) chart.destroy();
+    chart = new Chart(document.getElementById('equityChart'), {
         type: 'line',
         data: {
-            labels: data.map((_, i) => i),
+            labels: history.map((_,i)=>i),
             datasets: [{
-                label: 'Profit Acumulado',
-                data: data,
+                label: 'Unidades',
+                data: history,
                 borderColor: '#00f2ff',
                 backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                borderWidth: 2,
                 fill: true,
-                pointRadius: 0,
-                tension: 0.2
+                tension: 0.3,
+                pointRadius: 0
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
-                x: { display: false }
-            },
-            plugins: { legend: { display: false } }
-        }
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
     });
+
+    // Table
+    document.getElementById('tableBody').innerHTML = data.slice(-15).reverse().map(x => `
+        <tr>
+            <td>${x.match}</td><td>${x.league}</td><td>${x.odd.toFixed(2)}</td>
+            <td class="${x.res}">${x.res.toUpperCase()}</td>
+            <td style="color:${x.profit > 0 ? 'var(--win)' : 'var(--loss)'}">${x.profit.toFixed(2)}u</td>
+        </tr>
+    `).join('');
 }
 
 function erf(x) {
@@ -227,6 +200,5 @@ function erf(x) {
     return sign * y;
 }
 </script>
-
 </body>
 </html>
