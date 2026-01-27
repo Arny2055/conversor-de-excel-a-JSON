@@ -3,81 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poisson Intelligence - Strategy Optimizer</title>
+    <title>Poisson Pro - Dynamic Stake Advisor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; --win: #10b981; --loss: #ef4444; --text: #f1f5f9; --gold: #fbbf24; }
+        :root { --bg: #0a0f1e; --panel: #161c2d; --accent: #00f2ff; --win: #00ff88; --loss: #ff0055; --text: #e2e8f0; --gold: #ffd700; }
         * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1200px; margin: auto; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding: 15px 0; }
-        .input-area { background: var(--panel); padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #334155; }
-        textarea { width: 100%; height: 70px; background: #0a0f1e; border: 1px solid #475569; border-radius: 8px; color: var(--accent); padding: 10px; font-size: 11px; }
+        /* Glassmorphism Effect */
+        .glass { background: var(--panel); border: 1px solid #2d3748; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
         
-        .btn { background: var(--accent); color: var(--bg); border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        textarea { width: 100%; height: 60px; background: #050811; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); padding: 10px; font-family: monospace; font-size: 11px; }
+        .btn { background: linear-gradient(90deg, #00c6ff, #0072ff); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
 
-        /* Reporte de Mejora */
-        .advisor-box { background: linear-gradient(145deg, #1e293b, #111827); border: 1px solid var(--gold); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .advisor-box h2 { color: var(--gold); margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-        .advice-item { background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent); font-size: 0.9rem; }
-        .advice-item b { color: var(--accent); }
+        /* Dynamic Stake Box */
+        .stake-advisor { background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid var(--gold); position: relative; overflow: hidden; }
+        .stake-advisor h2 { color: var(--gold); margin: 0 0 15px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .stake-value { font-size: 2.5rem; font-weight: 900; color: var(--white); text-shadow: 0 0 10px var(--gold); }
+        .stake-meter { width: 100%; height: 10px; background: #334155; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        .stake-fill { height: 100%; background: var(--gold); transition: width 0.5s ease; }
 
-        /* KPIs */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .kpi-card { background: var(--panel); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
-        .kpi-card small { color: #94a3b8; font-size: 0.7rem; display: block; margin-bottom: 5px; }
-        .kpi-card span { font-size: 1.2rem; font-weight: bold; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+        .kpi-card { background: #1c2539; padding: 15px; border-radius: 12px; text-align: center; border-bottom: 3px solid #334155; }
+        .kpi-card small { color: #94a3b8; font-size: 0.65rem; display: block; text-transform: uppercase; }
+        .kpi-card span { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
 
-        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
-        @media (min-width: 768px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
-        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 300px; border: 1px solid #334155; }
+        .charts-row { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 1024px) { .charts-row { grid-template-columns: 2fr 1fr; } }
+        .chart-box { background: var(--panel); padding: 15px; border-radius: 12px; height: 320px; border: 1px solid #2d3748; }
 
-        .scroll-table { overflow-x: auto; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.8rem; }
-        th { background: #334155; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #334155; }
-        .win { color: var(--win); font-weight: bold; }
-        .loss { color: var(--loss); font-weight: bold; }
+        .winning { color: var(--win); }
+        .losing { color: var(--loss); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>POISSON <span style="color:var(--accent)">ADVISOR</span></h1>
-        <small>Smart Optimization Engine</small>
+    <div class="glass" style="text-align: center;">
+        <h1 style="margin:0; color:var(--accent);">POISSON <span style="color:#fff">DYNAMIC AI</span></h1>
+        <small>Smart Bankroll & Stake Management</small>
     </div>
 
-    <div class="input-area">
+    <div class="glass">
         <textarea id="rawInput" placeholder="Pega tu historial aquí..."></textarea>
-        <button class="btn" onclick="startAnalysis()">Analizar y Sugerir Mejoras</button>
+        <button class="btn" onclick="processAll()">Inyectar Datos y Calcular Riesgo</button>
     </div>
 
-    <div id="results" style="display:none;">
-        <div class="advisor-box">
-            <h2>&#128161; Sugerencias de Mejora Estratégica</h2>
-            <div id="adviceList"></div>
+    <div id="dashboard" style="display:none;">
+        <div class="glass stake-advisor">
+            <h2>&#128176; Próximo Stake Recomendado (Basado en últimos 10)</h2>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <div class="stake-value" id="stake-rec">1.00u</div>
+                    <div id="stake-desc" style="font-size: 0.85rem; color: #cbd5e1;">Analizando tendencia...</div>
+                </div>
+                <div style="text-align: right;">
+                    <small>CONFIANZA DEL MODELO</small>
+                    <div id="conf-val" style="font-size: 1.5rem; font-weight: bold; color: var(--gold);">0%</div>
+                </div>
+            </div>
+            <div class="stake-meter"><div class="stake-fill" id="stake-bar" style="width: 50%;"></div></div>
         </div>
 
         <div class="kpi-grid">
-            <div class="kpi-card"><small>YIELD</small><span id="k-yield">0%</span></div>
-            <div class="kpi-card"><small>P-VALUE</small><span id="k-p">0.00</span></div>
-            <div class="kpi-card"><small>DRAWDOWN</small><span id="k-dd" style="color:var(--loss)">0u</span></div>
-            <div class="kpi-card"><small>EFFICIENCY</small><span id="k-eff">0%</span></div>
+            <div class="kpi-card"><small>Yield Total</small><span id="k-yield">0%</span></div>
+            <div class="kpi-card"><small>Eficiencia L10</small><span id="k-eff10">0%</span></div>
+            <div class="kpi-card"><small>P-Value</small><span id="k-p">0.00</span></div>
+            <div class="kpi-card"><small>Net Profit</small><span id="k-profit">0u</span></div>
         </div>
 
-        <div class="charts-grid">
+        <div class="charts-row">
             <div class="chart-box"><canvas id="mainChart"></canvas></div>
-            <div class="chart-box"><canvas id="leagueChart"></canvas></div>
+            <div class="chart-box">
+                <h3 style="font-size: 0.9rem; margin: 0 0 10px 0; color: var(--accent);">Rendimiento por Liga</h3>
+                <div id="leagueStats" style="font-size: 0.8rem;"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-let charts = {};
+let mainChart = null;
 
-function startAnalysis() {
+function processAll() {
     const raw = document.getElementById('rawInput').value.trim();
     if(!raw) return;
 
@@ -86,111 +96,94 @@ function startAnalysis() {
     rows.forEach(r => {
         const c = r.split('\t').map(s => s.trim());
         let odd, res, league, match;
-        
-        // Detección multi-formato
         if (c[36] && (c[36].toLowerCase().includes('win') || c[36].toLowerCase().includes('los'))) {
             odd = parseFloat(c[2]); res = c[36].toLowerCase(); league = c[4]; match = c[5];
         } else if (c[29] && (c[29].toLowerCase().includes('win') || c[29].toLowerCase().includes('los'))) {
             odd = parseFloat(c[2]); res = c[29].toLowerCase(); league = c[4]; match = c[5];
         }
-
         if(!isNaN(odd) && res) {
-            db.push({ match, league, odd, res, profit: res === 'winning' ? (odd-1) : -1, prob: 1/odd });
+            db.push({ league, odd, res, profit: res === 'winning' ? (odd-1) : -1, prob: 1/odd });
         }
     });
 
-    if(db.length === 0) return alert("No se detectaron datos válidos.");
-    
-    document.getElementById('results').style.display = 'block';
-    renderAdvisor(db);
+    if(db.length === 0) return alert("Datos no válidos.");
+    document.getElementById('dashboard').style.display = 'block';
+    calculateDynamicRisk(db);
 }
 
-function renderAdvisor(db) {
+function calculateDynamicRisk(db) {
     const n = db.length;
-    const wins = db.filter(x => x.res === 'winning').length;
-    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
-    const yieldPct = (totalProfit / n) * 100;
+    const last10 = db.slice(-10);
+    const wins10 = last10.filter(x => x.res === 'winning').length;
+    const profit10 = last10.reduce((a, b) => a + b.profit, 0);
     
-    // P-Value
-    const expWins = db.reduce((a, b) => a + b.prob, 0);
-    const variance = db.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
-    const z = (wins - expWins) / Math.sqrt(variance);
-    const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
+    // Lógica de Stake Dinámico (Base 1 unidad)
+    // Ajustamos el stake según el ROI de los últimos 10 picks
+    let baseStake = 1.0;
+    let modifier = profit10 / 10; // Si ganas 5u en 10 picks, sumas 0.5 al stake.
+    let finalStake = Math.max(0.5, Math.min(2.5, baseStake + modifier)); // Límites de seguridad: 0.5u a 2.5u
 
-    // Lógicas de Sugerencia
-    const adviceList = document.getElementById('adviceList');
-    let adviceHtml = "";
-
-    // 1. Sugerencia de Ligas
-    const lMap = {};
-    db.forEach(x => { lMap[x.league] = (lMap[x.league] || 0) + x.profit; });
-    const sortedLigas = Object.entries(lMap).sort((a,b) => a[1] - b[1]);
-    const toxicLeague = sortedLigas[0];
+    // Actualizar UI del Asesor
+    document.getElementById('stake-rec').innerText = finalStake.toFixed(2) + "u";
+    document.getElementById('conf-val').innerText = (wins10 * 10) + "%";
+    document.getElementById('stake-bar').style.width = (wins10 * 10) + "%";
     
-    if(toxicLeague[1] < 0) {
-        adviceHtml += `<div class="advice-item"><b>Elimina Ligas Tóxicas:</b> Tu rendimiento en <u>${toxicLeague[0]}</u> es negativo (${toxicLeague[1].toFixed(2)}u). Dejar de apostar aquí aumentaría tu Yield inmediatamente.</div>`;
-    }
-
-    // 2. Sugerencia de Cuotas (Rango de Oro)
-    const ranges = { low: [], mid: [], high: [] };
-    db.forEach(x => {
-        if(x.odd < 1.7) ranges.low.push(x.profit);
-        else if(x.odd < 2.2) ranges.mid.push(x.profit);
-        else ranges.high.push(x.profit);
-    });
-    
-    const profits = { 
-        "Cuotas Bajas (<1.70)": ranges.low.reduce((a,b)=>a+b,0),
-        "Cuotas Medias (1.70-2.20)": ranges.mid.reduce((a,b)=>a+b,0),
-        "Cuotas Altas (>2.20)": ranges.high.reduce((a,b)=>a+b,0)
-    };
-    const bestRange = Object.entries(profits).sort((a,b) => b[1] - a[1])[0];
-    adviceHtml += `<div class="advice-item"><b>Focaliza tu Stake:</b> Tu mayor beneficio proviene de <b>${bestRange[0]}</b>. Considera especializarte en este rango de cuotas.</div>`;
-
-    // 3. Sugerencia de Varianza
-    if(pValue > 0.1) {
-        adviceHtml += `<div class="advice-item"><b>Control de Riesgo:</b> Tu P-Value es alto. No subas el stake todavía; los datos sugieren que podrías estar en una racha de suerte.</div>`;
+    const desc = document.getElementById('stake-desc');
+    if(profit10 > 0) {
+        desc.innerHTML = `Tendencia <b class="winning">POSITIVA</b>. El modelo Poisson está caliente. Sugerido aumentar exposición.`;
+    } else if(profit10 < 0) {
+        desc.innerHTML = `Tendencia <b class="losing">NEGATIVA</b>. Reduciendo riesgo para proteger banca (Drawdown Control).`;
     } else {
-        adviceHtml += `<div class="advice-item"><b>Escalabilidad:</b> Sistema sólido. Podrías aplicar un Interés Compuesto moderado (incremento de stake del 5% cada 20 unidades de beneficio).</div>`;
+        desc.innerHTML = `Tendencia estable. Mantener Stake plano de 1 unidad.`;
     }
 
-    adviceList.innerHTML = adviceHtml;
+    // KPIs Generales
+    const totalProfit = db.reduce((a, b) => a + b.profit, 0);
+    document.getElementById('k-yield').innerText = ((totalProfit/n)*100).toFixed(1) + "%";
+    document.getElementById('k-eff10').innerText = ((wins10/10)*100).toFixed(0) + "%";
+    document.getElementById('k-profit').innerText = totalProfit.toFixed(2) + "u";
 
-    // Actualizar KPIs
-    document.getElementById('k-yield').innerText = yieldPct.toFixed(2) + '%';
+    // P-Value
+    const expW = db.reduce((a, b) => a + b.prob, 0);
+    const vari = db.reduce((a, b) => a + (b.prob * (1 - b.prob)), 0);
+    const z = (db.filter(x => x.res === 'winning').length - expW) / Math.sqrt(vari);
+    const pValue = 1 - (0.5 * (1 + erf(z / Math.sqrt(2))));
     document.getElementById('k-p').innerText = pValue.toFixed(4);
-    document.getElementById('k-eff').innerText = ((wins/expWins)*100).toFixed(1) + '%';
-    
-    updateVisuals(db);
+
+    renderVisuals(db);
 }
 
-function updateVisuals(db) {
-    if(charts.e) charts.e.destroy();
-    if(charts.l) charts.l.destroy();
-
-    const ctxE = document.getElementById('mainChart').getContext('2d');
+function renderVisuals(db) {
+    if(mainChart) mainChart.destroy();
     let cur = 0;
-    charts.e = new Chart(ctxE, {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: db.map((_,i)=>i),
-            datasets: [{ label: 'Equity', data: db.map(x => cur += x.profit), borderColor: '#38bdf8', fill: true, backgroundColor: 'rgba(56,189,248,0.1)', pointRadius: 0 }]
+            labels: db.map((_, i) => i),
+            datasets: [{
+                label: 'Crecimiento Real',
+                data: db.map(x => cur += x.profit),
+                borderColor: '#00f2ff',
+                fill: true,
+                backgroundColor: 'rgba(0, 242, 255, 0.05)',
+                pointRadius: 0
+            }]
         },
-        options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Evolución de Unidades', color: '#fff' } } }
+        options: { maintainAspectRatio: false, scales: { x: { display: false } } }
     });
 
-    const ctxL = document.getElementById('leagueChart').getContext('2d');
-    const lNames = [...new Set(db.map(x => x.league))].slice(0,6);
-    const lProfits = lNames.map(name => db.filter(x => x.league === name).reduce((a,b)=>a+b.profit,0));
+    // Sidebar de Ligas
+    const lMap = {};
+    db.forEach(x => lMap[x.league] = (lMap[x.league] || 0) + x.profit);
+    const topL = Object.entries(lMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
     
-    charts.l = new Chart(ctxL, {
-        type: 'bar',
-        data: {
-            labels: lNames,
-            datasets: [{ label: 'Profit por Liga', data: lProfits, backgroundColor: lProfits.map(v => v>0?'#10b981':'#ef4444') }]
-        },
-        options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Rentabilidad por Liga (Top 6)', color: '#fff' } } }
-    });
+    document.getElementById('leagueStats').innerHTML = topL.map(l => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #2d3748; padding-bottom:2px;">
+            <span>${l[0]}</span>
+            <b class="${l[1] >= 0 ? 'winning' : 'losing'}">${l[1] >= 0 ? '+' : ''}${l[1].toFixed(2)}u</b>
+        </div>
+    `).join('');
 }
 
 function erf(x) {
