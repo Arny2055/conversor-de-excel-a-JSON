@@ -3,135 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetAGS AI Enhancer v2</title>
+    <title>BetAGS AI Pro - Ultra Stable</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upscaler@1.0.0-beta.33/dist/browser/upscaler.min.js"></script>
     
     <style>
-        :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --accent: #238636;
-            --error: #da3633;
-            --text: #c9d1d9;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            background-color: var(--card);
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-bottom: 20px;
-            background: #21262d;
-        }
-
-        .comparison-box {
-            position: relative;
-            width: 100%;
-            margin: 20px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            display: none;
-            border: 1px solid #30363d;
-        }
-
-        canvas { width: 100%; display: block; }
-
-        .btn {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn:disabled { background: #21262d; color: #8b949e; cursor: not-allowed; }
-
-        #errorMessage {
-            color: var(--error);
-            background: rgba(218, 54, 51, 0.1);
-            padding: 10px;
-            border-radius: 6px;
-            display: none;
-            margin-top: 15px;
-            font-size: 14px;
-        }
+        :root { --bg: #0d1117; --card: #161b22; --accent: #238636; --text: #c9d1d9; --border: #30363d; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); max-width: 500px; width: 100%; text-align: center; }
+        .status { font-size: 13px; margin: 15px 0; padding: 8px; border-radius: 6px; background: #21262d; border: 1px solid var(--border); }
+        .preview-area { margin: 15px 0; border: 2px dashed var(--border); border-radius: 8px; min-height: 150px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        canvas { max-width: 100%; height: auto; display: block; }
+        .btn { background: var(--accent); color: white; border: none; padding: 14px 20px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .info { font-size: 11px; color: #8b949e; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AI Image Sharpener</h2>
-    <div id="engineStatus" class="status-badge">⏳ Iniciando motor...</div>
+    <h3>AI Photo Sharpener Pro</h3>
+    <div id="status" class="status">⏳ Cargando motor de IA...</div>
     
-    <div id="errorMessage"></div>
-
-    <input type="file" id="upload" accept="image/*" style="display: none;">
-    <button class="btn" onclick="document.getElementById('upload').click()" id="mainBtn">Seleccionar Imagen</button>
-
-    <div class="comparison-box" id="resultBox">
-        <p style="font-size: 12px; color: #8b949e;">RESULTADO IA (SUPER RESOLUCIÓN)</p>
-        <canvas id="outputCanvas"></canvas>
-        <button class="btn" style="margin-top:15px; background:#30363d" onclick="download()">Descargar HD</button>
+    <div class="preview-area" id="dropZone">
+        <canvas id="mainCanvas"></canvas>
+        <div id="placeholder">Sin imagen seleccionada</div>
     </div>
+
+    <input type="file" id="upload" accept="image/*" style="display:none">
+    <button class="btn" id="actionBtn" disabled onclick="document.getElementById('upload').click()">Seleccionar Foto</button>
+    
+    <div class="info">Optimizada para evitar errores de memoria en celulares.</div>
+    <button id="dlBtn" class="btn" style="margin-top:10px; background:#30363d; display:none" onclick="download()">Descargar Resultado</button>
 </div>
 
 <script>
     let upscaler;
-    const engineStatus = document.getElementById('engineStatus');
-    const mainBtn = document.getElementById('mainBtn');
-    const errorMsg = document.getElementById('errorMessage');
+    const status = document.getElementById('status');
+    const actionBtn = document.getElementById('actionBtn');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-    async function initEngine() {
+    // 1. Inicializar con limpieza de memoria
+    async function init() {
         try {
-            // Intentamos forzar WebGL primero
-            await tf.setBackend('webgl');
+            await tf.setBackend('webgl'); // Intenta GPU
             await tf.ready();
-            
             upscaler = new Upscaler({
-                model: {
-                    path: 'https://cdn.jsdelivr.net/npm/@upscalerjs/models@1.0.0-beta.4/models/esrgan-slim/2x/model.json',
-                    scale: 2
-                }
+                model: { path: 'https://cdn.jsdelivr.net/npm/@upscalerjs/models@1.0.0-beta.4/models/esrgan-slim/2x/model.json', scale: 2 }
             });
-
-            engineStatus.innerText = "✅ Motor IA Listo (Aceleración por GPU)";
-            engineStatus.style.color = "#3fb950";
+            status.innerText = "✅ Motor listo. Sube una foto.";
+            actionBtn.disabled = false;
         } catch (e) {
-            console.warn("Fallo WebGL, intentando CPU...");
-            try {
-                await tf.setBackend('cpu');
-                engineStatus.innerText = "⚠️ Motor IA Listo (Modo Compatibilidad)";
-                engineStatus.style.color = "#d29922";
-            } catch (err) {
-                errorMsg.innerText = "Tu navegador no soporta ninguna tecnología de IA. Prueba actualizando Chrome o usando una PC.";
-                errorMsg.style.display = "block";
-            }
+            status.innerText = "⚠️ Modo compatibilidad activado.";
+            await tf.setBackend('cpu');
+            actionBtn.disabled = false;
         }
     }
 
@@ -143,45 +69,68 @@
         img.src = URL.createObjectURL(file);
         
         img.onload = async () => {
-            mainBtn.disabled = true;
-            engineStatus.innerText = "🧠 Procesando... (No cierres la pestaña)";
-            
-            try {
-                // Upscaling inteligente
-                const enhancedImgSrc = await upscaler.upscale(img, {
-                    patchSize: 32, // Pedazos pequeños para evitar errores de memoria
-                    padding: 2
-                });
+            // 2. AUTO-RESIZE: Si la imagen es gigante, la bajamos a un tamaño seguro (máx 1200px)
+            const MAX_SIZE = 1000; 
+            let width = img.width;
+            let height = img.height;
 
-                const canvas = document.getElementById('outputCanvas');
-                const ctx = canvas.getContext('2d');
-                const enhancedImg = new Image();
-                enhancedImg.src = enhancedImgSrc;
-                
-                enhancedImg.onload = () => {
-                    canvas.width = enhancedImg.width;
-                    canvas.height = enhancedImg.height;
-                    ctx.drawImage(enhancedImg, 0, 0);
-                    document.getElementById('resultBox').style.display = 'block';
-                    engineStatus.innerText = "✨ ¡Mejora completada!";
-                    mainBtn.disabled = false;
-                };
-            } catch (err) {
-                errorMsg.innerText = "Error al procesar: Imagen demasiado grande o memoria insuficiente.";
-                errorMsg.style.display = "block";
-                mainBtn.disabled = false;
+            if (width > height) {
+                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+            } else {
+                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
             }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            document.getElementById('placeholder').style.display = 'none';
+            
+            process(canvas);
         };
     };
 
+    async function process(sourceCanvas) {
+        actionBtn.disabled = true;
+        status.innerText = "🧠 Procesando píxeles... (0%)";
+        
+        try {
+            // 3. Gestión agresiva de tensores (limpieza de RAM)
+            const result = await tf.tidy(() => {
+                return upscaler.upscale(sourceCanvas, {
+                    patchSize: 16, // Parches más pequeños = menos uso de RAM
+                    padding: 2,
+                    progress: (p) => { status.innerText = `🧠 Procesando... ${Math.round(p * 100)}%`; }
+                });
+            });
+
+            const enhancedImg = new Image();
+            enhancedImg.src = await result;
+            enhancedImg.onload = () => {
+                canvas.width = enhancedImg.width;
+                canvas.height = enhancedImg.height;
+                ctx.drawImage(enhancedImg, 0, 0);
+                status.innerText = "✨ ¡Imagen mejorada con IA!";
+                actionBtn.disabled = false;
+                document.getElementById('dlBtn').style.display = 'block';
+                
+                // Limpiar tensores restantes
+                tf.disposeVariables(); 
+            };
+        } catch (err) {
+            console.error(err);
+            status.innerText = "❌ Error: La foto es muy pesada para este celular.";
+            actionBtn.disabled = false;
+        }
+    }
+
     function download() {
         const link = document.createElement('a');
-        link.download = 'betags-ai-photo.png';
-        link.href = document.getElementById('outputCanvas').toDataURL();
+        link.download = 'BetAGS_AI_Enhanced.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
     }
 
-    initEngine();
+    init();
 </script>
 
 </body>
