@@ -2,169 +2,302 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Enhancer Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Photo Enhancer Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/upscaler.min.js"></script>
+    
     <style>
         :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --accent: #238636;
-            --text: #c9d1d9;
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --accent: #2f81f7;
+            --accent-hover: #58a6ff;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --border: #30363d;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
             margin: 0;
+            padding: 20px;
+            min-height: 100vh;
         }
 
-        .container {
-            background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            max-width: 600px;
+        h1 { margin-bottom: 10px; font-weight: 600; }
+        p.subtitle { color: var(--text-secondary); margin-bottom: 30px; text-align: center; font-size: 0.9rem;}
+
+        .main-card {
+            background-color: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 100%;
+            max-width: 800px;
             text-align: center;
         }
 
-        canvas {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-top: 20px;
-            border: 1px solid #30363d;
+        /* Estilos para el área de comparación Antes/Después */
+        .comparison-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 4 / 3; /* Relación de aspecto inicial por defecto */
+            margin: 20px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            display: none; /* Oculto hasta que haya imagen */
+            background: #000;
         }
 
-        .controls {
-            display: grid;
-            gap: 15px;
-            margin-top: 20px;
+        .img-comp-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 50%; /* Inicialmente a la mitad */
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+            border-right: 2px solid var(--accent);
         }
 
-        .control-group {
+        .comparison-image {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Mantiene la proporción de la imagen */
+            display: block;
+        }
+
+        /* Etiquetas Antes/Después */
+        .label {
+            position: absolute;
+            top: 10px;
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .label-before { left: 10px; color: #ff6b6b; }
+        .label-after { right: 10px; color: var(--accent); }
+
+        /* Slider invisible para controlar la comparación */
+        .comparison-slider {
+            position: absolute; z-index: 10;
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 100%;
+            background: transparent; outline: none; margin: 0;
+            top: 0; left: 0; cursor: col-resize;
+        }
+        .comparison-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 2px; height: 100%; background: transparent; }
+        .comparison-slider::-moz-range-thumb { width: 2px; height: 100%; background: transparent; border: none; }
+
+        /* Controles y Botones */
+        .controls-area {
             display: flex;
             flex-direction: column;
-            text-align: left;
+            gap: 15px;
+            margin-top: 25px;
+            align-items: center;
         }
 
-        input[type="range"] {
-            accent-color: var(--accent);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        button, .file-input-label {
+        .file-input-wrapper input[type=file] { display: none; }
+        .btn {
             background-color: var(--accent);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 12px 24px;
+            border-radius: 8px;
             font-weight: 600;
-            transition: 0.2s;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 1rem;
         }
+        .btn:hover { background-color: var(--accent-hover); }
+        .btn:disabled { background-color: var(--border); cursor: not-allowed; opacity: 0.7; }
+        .btn-secondary { background-color: var(--bg-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background-color: var(--border); }
 
-        button:hover { background-color: #2ea043; }
-
-        input[type="file"] { display: none; }
+        /* Estado de carga */
+        .loading-state {
+            display: none;
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .spinner {
+            display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s ease-in-out infinite; margin-right: 10px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Mejora de Imagen HTML5</h2>
-    <p>Sube una foto para ajustar parámetros de calidad.</p>
-    
-    <label class="file-input-label" for="upload">📁 Seleccionar Foto</label>
-    <input type="file" id="upload" accept="image/*">
+    <h1>AI Photo Enhancer Pro</h1>
+    <p class="subtitle">Super-resolución y limpieza de ruido usando Inteligencia Artificial local (TensorFlow.js)</p>
 
-    <canvas id="canvas"></canvas>
+    <div class="main-card">
+        <div class="controls-area">
+            <label class="btn file-input-wrapper">
+                📁 Seleccionar Foto
+                <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp">
+            </label>
+        </div>
 
-    <div class="controls">
-        <div class="control-group">
-            <label>Brillo</label>
-            <input type="range" id="brightness" min="0" max="200" value="100">
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <span id="loadingText">Inicializando motor de IA (esto puede tardar unos segundos la primera vez)...</span>
         </div>
-        <div class="control-group">
-            <label>Contraste</label>
-            <input type="range" id="contrast" min="0" max="200" value="100">
+
+        <div class="comparison-container" id="compContainer">
+            <span class="label label-after">DESPUÉS (IA x2)</span>
+            <img src="" id="imgAfter" class="comparison-image">
+            
+            <div class="img-comp-overlay" id="overlay">
+                <span class="label label-before">ANTES</span>
+                <img src="" id="imgBefore" class="comparison-image">
+            </div>
+            <input type="range" min="0" max="100" value="50" class="comparison-slider" id="slider">
         </div>
-        <div class="control-group">
-            <label>Saturación</label>
-            <input type="range" id="saturate" min="0" max="200" value="100">
+
+        <div class="controls-area" id="actionControls" style="display:none;">
+            <button class="btn btn-secondary" onclick="processImage()" id="btnReprocess">🔄 Re-procesar</button>
+            <a id="downloadLink" class="btn">⬇️ Descargar Resultado (HD)</a>
         </div>
     </div>
-
-    <div class="btn-group">
-        <button onclick="applyAutoEnhance()">✨ Auto-Mejora</button>
-        <button onclick="downloadImage()" style="background: #30363d;">Descargar</button>
-    </div>
-</div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const upload = document.getElementById('upload');
-    const sliders = document.querySelectorAll('input[type="range"]');
-    
-    let originalImage = null;
+    // --- Configuración y Variables Globales ---
+    const fileInput = document.getElementById('fileInput');
+    const loadingState = document.getElementById('loadingState');
+    const loadingText = document.getElementById('loadingText');
+    const compContainer = document.getElementById('compContainer');
+    const imgBefore = document.getElementById('imgBefore');
+    const imgAfter = document.getElementById('imgAfter');
+    const overlay = document.getElementById('overlay');
+    const slider = document.getElementById('slider');
+    const actionControls = document.getElementById('actionControls');
+    const downloadLink = document.getElementById('downloadLink');
+    const btnReprocess = document.getElementById('btnReprocess');
 
-    upload.addEventListener('change', (e) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                originalImage = img;
-                applyFilters();
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
+    let upscaler;
+    let currentOriginalImage = null;
+    let isProcessing = false;
+
+    // --- Inicialización del Motor de IA ---
+    async function initAI() {
+        try {
+            loadingState.style.display = 'block';
+            // Usamos el modelo predeterminado (GANS) que ofrece un buen equilibrio calidad/velocidad
+            upscaler = new Upscaler({
+                model: 'default-model', 
+            });
+            await upscaler.warmup(); // "Calienta" la GPU
+            loadingText.innerText = "Motor IA listo. Esperando imagen...";
+            setTimeout(() => { loadingState.style.display = 'none'; }, 1500);
+            console.log('UpscalerJS initialized successfully');
+        } catch (err) {
+            console.error(err);
+            loadingText.innerText = "Error al cargar el motor IA. Tu dispositivo podría no ser compatible con WebGL.";
+            loadingText.style.color = '#ff6b6b';
+        }
+    }
+
+    // Iniciar IA al cargar la página
+    window.addEventListener('DOMContentLoaded', initAI);
+
+
+    // --- Manejo de Archivos ---
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Reseteamos la interfaz
+        compContainer.style.display = 'none';
+        actionControls.style.display = 'none';
+        
+        // Convertir archivo a objeto imagen
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise(r => img.onload = r);
+        currentOriginalImage = img;
+
+        // Configurar vista "Antes"
+        imgBefore.src = img.src;
+        // Ajustar el contenedor al aspect ratio de la imagen
+        compContainer.style.aspectRatio = `${img.width} / ${img.height}`;
+
+        processImage();
     });
 
-    function applyFilters() {
-        if (!originalImage) return;
 
-        const b = document.getElementById('brightness').value;
-        const c = document.getElementById('contrast').value;
-        const s = document.getElementById('saturate').value;
+    // --- Procesamiento con IA ---
+    async function processImage() {
+        if (!currentOriginalImage || !upscaler || isProcessing) return;
+        
+        isProcessing = true;
+        btnReprocess.disabled = true;
+        fileInput.disabled = true;
+        loadingState.style.display = 'block';
+        loadingText.innerText = "La IA está analizando y mejorando la imagen. Por favor espera...";
 
-        ctx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
-        ctx.drawImage(originalImage, 0, 0);
+        try {
+            const start = performance.now();
+            
+            // EJECUCIÓN DE LA IA: Esta línea hace toda la magia
+            // Toma la imagen original y devuelve una nueva versión en base64 con doble resolución.
+            const upscaleResultSrc = await upscaler.upscale(currentOriginalImage, {
+                patchSize: 64, // Procesa la imagen en trozos pequeños para no saturar la memoria del celular
+                padding: 2
+            });
+
+            const end = performance.now();
+            console.log(`Upscaling took: ${((end - start)/1000).toFixed(2)}s`);
+
+            // Configurar vista "Después" y mostrar resultados
+            imgAfter.src = upscaleResultSrc;
+            compContainer.style.display = 'block';
+            actionControls.style.display = 'flex';
+            
+            // Configurar botón de descarga
+            downloadLink.href = upscaleResultSrc;
+            downloadLink.download = "imagen_mejorada_ai.png";
+
+            loadingState.style.display = 'none';
+
+        } catch (err) {
+            console.error("Error durante el procesamiento:", err);
+            loadingText.innerText = "Error: La imagen podría ser demasiado grande para la memoria de este dispositivo.";
+            loadingText.style.color = '#ff6b6b';
+        } finally {
+            isProcessing = false;
+            btnReprocess.disabled = false;
+            fileInput.disabled = false;
+        }
     }
 
-    sliders.forEach(slider => {
-        slider.addEventListener('input', applyFilters);
+
+    // --- Funcionalidad del Slider Antes/Después ---
+    slider.addEventListener('input', (e) => {
+        const percentage = e.target.value + '%';
+        overlay.style.width = percentage;
     });
 
-    function applyAutoEnhance() {
-        // Valores predefinidos para una mejora rápida
-        document.getElementById('brightness').value = 105;
-        document.getElementById('contrast').value = 120;
-        document.getElementById('saturate').value = 110;
-        applyFilters();
-    }
+    // Sincronizar el overlay con el slider al inicio
+    overlay.style.width = slider.value + '%';
 
-    function downloadImage() {
-        const link = document.createElement('a');
-        link.download = 'foto-mejorada.png';
-        link.href = canvas.toDataURL();
-        link.click();
-    }
 </script>
 
 </body>
